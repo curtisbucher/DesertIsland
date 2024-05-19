@@ -13,6 +13,7 @@
 #include "MatrixStack.h"
 #include "WindowManager.h"
 #include "Texture.h"
+#include "ProcTerrain.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader/tiny_obj_loader.h>
@@ -42,6 +43,9 @@ public:
 
 	//our geometry
 	shared_ptr<MultiShape> palm_tree, sphere, theBunny, dummy;
+
+	// Terrain Generation
+	ProcTerrain ground;
 
 	//global data for ground plane - direct load constant defined CPU data to GPU (not obj)
 	GLuint GrndBuffObj, GrndNorBuffObj, GrndTexBuffObj, GIndxBuffObj;
@@ -248,7 +252,7 @@ public:
 		}
 
 		//code to load in the ground plane (CPU defined data passed to GPU)
-		initGround();
+		ground.init();
 	}
 
 	//directly pass quad for the ground to the GPU
@@ -305,34 +309,34 @@ public:
       	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
       }
 
-      //code to draw the ground plane
-     void drawGround(shared_ptr<Program> curS, shared_ptr<Texture> texture0) {
-     	curS->bind();
-     	glBindVertexArray(GroundVertexArrayID);
-     	texture0->bind(curS->getUniform("Texture0"));
-		//draw the ground plane
-  		SetModel(vec3(0, -1, 0), 0, 0, 1, curS);
-  		glEnableVertexAttribArray(0);
-  		glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-  		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    //   //code to draw the ground plane
+    //  void drawGround(shared_ptr<Program> curS, shared_ptr<Texture> texture0) {
+    //  	curS->bind();
+    //  	glBindVertexArray(GroundVertexArrayID);
+    //  	texture0->bind(curS->getUniform("Texture0"));
+	// 	//draw the ground plane
+  	// 	SetModel(vec3(0, -1, 0), 0, 0, 1, curS);
+  	// 	glEnableVertexAttribArray(0);
+  	// 	glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
+  	// 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-  		glEnableVertexAttribArray(1);
-  		glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-  		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  	// 	glEnableVertexAttribArray(1);
+  	// 	glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
+  	// 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-  		glEnableVertexAttribArray(2);
-  		glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-  		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+  	// 	glEnableVertexAttribArray(2);
+  	// 	glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
+  	// 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-   		// draw!
-  		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-  		glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
+   	// 	// draw!
+  	// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
+  	// 	glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
 
-  		glDisableVertexAttribArray(0);
-  		glDisableVertexAttribArray(1);
-  		glDisableVertexAttribArray(2);
-  		curS->unbind();
-     }
+  	// 	glDisableVertexAttribArray(0);
+  	// 	glDisableVertexAttribArray(1);
+  	// 	glDisableVertexAttribArray(2);
+  	// 	curS->unbind();
+    //  }
 
      //helper function to pass material data to the GPU
 	void SetMaterial(shared_ptr<Program> curS, int i) {
@@ -420,6 +424,7 @@ public:
 			View->rotate(camera_rot.z, vec3(0,0,1));
 			View->translate(camera_trans);
 
+		/*
 		// --- Draw Solid Colored Items ---
 		prog->bind();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
@@ -459,7 +464,7 @@ public:
 		dummy->draw(prog);
 
 		prog->unbind();
-
+		*/
 
 		// --- Draw Textured Items ---
 		//switch shaders to the texture mapping shader and draw the ground
@@ -481,24 +486,24 @@ public:
 		palm_tree->center_and_scale();
 		palm_tree->translate(vec3(0, 0, 0));
 		palm_tree->scale(vec3(2));
-		//SetMaterial(prog, 3);
 		palm_tree->draw(texProg);
 
 		glUniform1i(texProg->getUniform("flip"), 0);
 
-
 		// draw the island
+		/*
 		sand_texture->bind(texProg->getUniform("Texture0"));
 		sphere->reset_trans();
 		sphere->center_and_scale();
 		sphere->translate(vec3(0, -20, 0));
 		sphere->scale(vec3(20));
 		sphere->draw(texProg);
+		*/
 
 		texProg->unbind();
 
 		//draw the ground plane
-		drawGround(texProg, water_texture);
+		ground.draw(texProg, sand_texture);
 
 		//animation update example
 		sTheta = sin(glfwGetTime());
@@ -508,7 +513,6 @@ public:
 		// Pop matrix stacks.
 		Projection->popMatrix();
 		View->popMatrix();
-
 	}
 };
 
