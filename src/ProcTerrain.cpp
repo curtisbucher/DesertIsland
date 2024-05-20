@@ -15,45 +15,80 @@ ProcTerrain::~ProcTerrain()
 {
 }
 
+#define MESHSIZE 20
 void ProcTerrain::init()
 {
+    // the dimensions of the grid (in points)
+    int points_w = 20;
+    int points_h = 20;
+
+    int num_points = points_w * points_h;
+    int num_tris = (points_w - 1) * (points_h - 1) * 2;
+
+    // the width and height of a triangle in the grid
+    float tri_size = 4.0;
+
     GLfloat tex_zoom = 20;
     float g_groundSize = 20;
     float g_groundY = -0.25;
 
-    // A x-z plane at y = g_groundY of dimension [-g_groundSize, g_groundSize]^2
-    float GrndPos[] = {
-        -g_groundSize, g_groundY, -g_groundSize,
-        -g_groundSize, g_groundY,  g_groundSize,
-        g_groundSize, g_groundY,  g_groundSize,
-        g_groundSize, g_groundY, -g_groundSize
-    };
+    // TODO: programmatically fill in positions, and idxs.
+    float* GrndPos = (float*) malloc(sizeof(float) * num_points * 3);
+    float* GrndNorm = (float*) malloc(sizeof(float) * num_points * 3);
+    static GLfloat* GrndTex = (float*) malloc(sizeof(float) * num_points * 2);
 
-    float GrndNorm[] = {
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0,
-        0, 1, 0
-    };
+    glm::vec3 vertices[MESHSIZE * MESHSIZE * 4];
+    for(int x=0;x<MESHSIZE;x++)
+        for (int z = 0; z < MESHSIZE; z++)
+            {
+            vertices[x * 4 + z*MESHSIZE * 4 + 0] = glm::vec3(0.0, 0.0, 0.0) + glm::vec3(x*tri_size, 0, z*tri_size);
+            vertices[x * 4 + z*MESHSIZE * 4 + 1] = glm::vec3(tri_size, 0.0, 0.0) + glm::vec3(x*tri_size, 0, z*tri_size);
+            vertices[x * 4 + z*MESHSIZE * 4 + 2] = glm::vec3(tri_size, 0.0, tri_size) + glm::vec3(x*tri_size, 0, z*tri_size);
+            vertices[x * 4 + z*MESHSIZE * 4 + 3] = glm::vec3(0.0, 0.0, tri_size) + glm::vec3(x*tri_size, 0, z*tri_size);
+            }
 
-    static GLfloat GrndTex[] = {
-        0, 0, // back
-        0, tex_zoom,
-        tex_zoom, tex_zoom,
-        tex_zoom, 0 };
+    //tex coords
+    float t = 1.;// / 100;
+    glm::vec2 tex[MESHSIZE * MESHSIZE * 4];
+    for (int x = 0; x<MESHSIZE; x++)
+        for (int y = 0; y < MESHSIZE; y++)
+        {
+            tex[x * 4 + y*MESHSIZE * 4 + 0] = glm::vec2(0.0, 0.0)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*MESHSIZE * 4 + 1] = glm::vec2(t, 0.0)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*MESHSIZE * 4 + 2] = glm::vec2(t, t)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*MESHSIZE * 4 + 3] = glm::vec2(0.0, t)+ glm::vec2(x, y)*t;
+        }
 
-    unsigned short idx[] = {0, 1, 2, 0, 2, 3};
+    for(int i = 0; i < points_w; i++) {
+        for(int j = 0; j < points_h; j++) {
+            // // normal
+            GrndNorm[i * points_h + j] = 0;
+            GrndNorm[i * points_h + j + 1] = 1;
+            GrndNorm[i * points_h + j + 2] = 0;
+        }
+    }
+
+    // elements
+    GLushort elements[MESHSIZE * MESHSIZE * 6];
+    int ind = 0;
+    for (int i = 0; i<MESHSIZE * MESHSIZE * 6; i+=6, ind+=4){
+        elements[i + 0] = ind + 0;
+        elements[i + 1] = ind + 1;
+        elements[i + 2] = ind + 2;
+        elements[i + 3] = ind + 0;
+        elements[i + 4] = ind + 2;
+        elements[i + 5] = ind + 3;
+    }
 
     //generate the ground VAO
     glGenVertexArrays(1, &GroundVertexArrayID);
     glBindVertexArray(GroundVertexArrayID);
 
-    g_GiboLen = 6;
+    g_GiboLen = MESHSIZE * MESHSIZE * 6;//6;
     glGenBuffers(1, &GrndBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GrndPos), GrndPos, GL_STATIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(GrndPos), GrndPos, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * MESHSIZE * MESHSIZE * 4, vertices, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &GrndNorBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
@@ -61,11 +96,13 @@ void ProcTerrain::init()
 
     glGenBuffers(1, &GrndTexBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GrndTex), GrndTex, GL_STATIC_DRAW);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(GrndTex), GrndTex, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * MESHSIZE * MESHSIZE * 4, tex, GL_STATIC_DRAW);
 
     glGenBuffers(1, &GIndxBuffObj);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*MESHSIZE * MESHSIZE * 6, elements, GL_STATIC_DRAW);
 }
 
 // randomely generate terrain
@@ -74,7 +111,7 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     glBindVertexArray(GroundVertexArrayID);
     texture0->bind(curS->getUniform("Texture0"));
 
-    //draw the ground plane
+    // //draw the ground plane
     SetModel(glm::vec3(0, -1, 0), 0, 0, 1, curS);
 
     glEnableVertexAttribArray(0);
@@ -84,6 +121,10 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+    // glEnableVertexAttribArray(1);
+    // glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
+    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);

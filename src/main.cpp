@@ -36,10 +36,7 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program - use this one for Blinn-Phong
-	std::shared_ptr<Program> prog;
-
-	//Our shader program for textures
-	std::shared_ptr<Program> texProg;
+	std::shared_ptr<Program> prog, texProg, heightShader;
 
 	//our geometry
 	shared_ptr<MultiShape> palm_tree, sphere, theBunny, dummy;
@@ -162,7 +159,10 @@ public:
 		prog = make_shared<Program>();
 		prog->setVerbose(true);
 		prog->setShaderNames(resourceDirectory + "/simple_vert.glsl", resourceDirectory + "/simple_frag.glsl");
-		prog->init();
+		if(!prog->init()) {
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
 		prog->addUniform("P");
 		prog->addUniform("V");
 		prog->addUniform("M");
@@ -181,7 +181,10 @@ public:
 		texProg = make_shared<Program>();
 		texProg->setVerbose(true);
 		texProg->setShaderNames(resourceDirectory + "/tex_vert.glsl", resourceDirectory + "/tex_frag0.glsl");
-		texProg->init();
+		if(!texProg->init()) {
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
 		texProg->addUniform("P");
 		texProg->addUniform("V");
 		texProg->addUniform("M");
@@ -196,6 +199,30 @@ public:
 		texProg->addAttribute("vertPos");
 		texProg->addAttribute("vertNor");
 		texProg->addAttribute("vertTex");
+
+		// Initialize the GLSL program that we will use for texture mapping
+		heightShader = make_shared<Program>();
+		heightShader->setVerbose(true);
+		heightShader->setShaderNames(resourceDirectory + "/tex_vert.glsl", resourceDirectory + "/tex_frag0.glsl");
+		if(!heightShader->init()) {
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		heightShader->addUniform("P");
+		heightShader->addUniform("V");
+		heightShader->addUniform("M");
+		// lighting
+		heightShader->addUniform("lightColor");
+		heightShader->addUniform("ambientIntensity");
+		heightShader->addUniform("shineIntensity");
+
+		heightShader->addUniform("flip");
+		heightShader->addUniform("Texture0");
+		heightShader->addUniform("lightPos");
+		heightShader->addAttribute("vertPos");
+		heightShader->addAttribute("vertNor");
+		heightShader->addAttribute("vertTex");
+
 
 		// -- TEXTURES ---
 		//read in a load the texture
@@ -466,8 +493,17 @@ public:
 		prog->unbind();
 		*/
 
-		// --- Draw Textured Items ---
-		//switch shaders to the texture mapping shader and draw the ground
+		// --- Initialize Textures ---
+		// Initialize Prog
+		prog->bind();
+		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+
+		glUniform1i(prog->getUniform("flip"), 0);
+		glUniform3f(prog->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
+		prog->unbind();
+
+		// Initialize texProg
 		texProg->bind();
 		glUniformMatrix4fv(texProg->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
 		glUniformMatrix4fv(texProg->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
@@ -477,8 +513,24 @@ public:
 		glUniform3f(texProg->getUniform("lightColor"), light_color.r, light_color.g, light_color.b);
 		glUniform1f(texProg->getUniform("ambientIntensity"), ambient_intensity);
 		glUniform1f(texProg->getUniform("shineIntensity"), shine_intensity);
+		texProg->unbind();
+
+		// Height Shader
+		heightShader->bind();
+		glUniformMatrix4fv(heightShader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(heightShader->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(heightShader->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+
+		glUniform3f(heightShader->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
+		glUniform3f(heightShader->getUniform("lightColor"), light_color.r, light_color.g, light_color.b);
+		glUniform1f(heightShader->getUniform("ambientIntensity"), ambient_intensity);
+		glUniform1f(heightShader->getUniform("shineIntensity"), shine_intensity);
+		heightShader->unbind();
+
+		// --- Draw Scene ---
 
 		//draw the palm tree
+		texProg->bind();
 		glUniform1i(texProg->getUniform("flip"), 1);
 
 		tree1_texture->bind(texProg->getUniform("Texture0"));
@@ -489,21 +541,10 @@ public:
 		palm_tree->draw(texProg);
 
 		glUniform1i(texProg->getUniform("flip"), 0);
-
-		// draw the island
-		/*
-		sand_texture->bind(texProg->getUniform("Texture0"));
-		sphere->reset_trans();
-		sphere->center_and_scale();
-		sphere->translate(vec3(0, -20, 0));
-		sphere->scale(vec3(20));
-		sphere->draw(texProg);
-		*/
-
 		texProg->unbind();
 
-		//draw the ground plane
-		ground.draw(texProg, sand_texture);
+		// draw the ground
+		ground.draw(heightShader, sand_texture);
 
 		//animation update example
 		sTheta = sin(glfwGetTime());
