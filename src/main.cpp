@@ -77,42 +77,42 @@ public:
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
 		// Rotation
-		if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_A) {
 			camera_rot.y -= 0.2;
 		}
-		if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_D) {
 			camera_rot.y += 0.2;
 		}
-		if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_W) {
 			camera_rot.x -= 0.2;
 		}
-		if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_S) {
 			camera_rot.x += 0.2;
 		}
-		if (key == GLFW_KEY_Z&& action == GLFW_PRESS) {
+		if (key == GLFW_KEY_Z) {
 			camera_trans.z -= 0.2;
 		}
-		if (key == GLFW_KEY_X && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_X) {
 			camera_trans.z += 0.2;
 		}
 		// Translation
-		if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_UP) {
 			camera_trans.y -= 0.2;
 		}
-		if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_DOWN) {
 			camera_trans.y += 0.2;
 		}
-		if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_LEFT) {
 			camera_trans.x -= 0.2;
 		}
-		if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_RIGHT) {
 			camera_trans.x += 0.2;
 		}
 		// Light translation
-		if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_Q) {
 			light_trans.x -= 0.5;
 		}
-		if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+		if (key == GLFW_KEY_E) {
 			light_trans.x += 0.5;
 		}
 

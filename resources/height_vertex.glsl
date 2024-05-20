@@ -47,19 +47,36 @@ float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
-void main() {
-  float height = noise(vertPos.xzy, 11, 0.5, 0.5);
-  float baseheight = noise(vertPos.xzy, 4, 0.4, 0.3);
+float get_height(vec3 pos){
+  float height = noise(pos.xzy, 11, 0.5, 0.5);
+  float baseheight = noise(pos.xzy, 4, 0.4, 0.3);
   baseheight = pow(baseheight, 5)*3;
   height = baseheight*height;
+  return height;
   // height*=60;
+}
 
+void main() {
   vec4 vPosition;
 
   /* First model transforms */
-  gl_Position = P * V * M * vec4(vertPos.x, height, vertPos.z, 1.0);
+  gl_Position = P * V * M * vec4(vertPos.x, get_height(vertPos.xzy), vertPos.z, 1.0);
 
-  fragNor = (M * vec4(vertNor, 0.0)).xyz;
+  /* get other 3 vertices */
+  vec3 v1 = vertPos.xyz;
+  vec3 v2 = vertPos.xyz + vec3(1.0, 0.0, 0.0);
+  vec3 v3 = vertPos.xyz + vec3(0.0, 0.0, -1.0);
+
+  vec3 pos1 = vec3(v1.x, get_height(v1.xzy), v1.z);
+
+  vec3 pos2 = vec3(v2.x, get_height(v2.xzy), v2.z);
+  vec3 pos3 = vec3(v3.x, get_height(v3.xzy), v3.z);
+
+  // calculate normal
+  vec3 normal = normalize(cross(pos2 - pos1, pos3 - pos1));
+  fragNor = (M * vec4(normal, 0.0)).xyz;
+
+
   lightDir = lightPos - (M*vertPos).xyz;
 
   /* pass through the texture coordinates to be interpolated */

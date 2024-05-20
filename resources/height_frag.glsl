@@ -35,6 +35,6 @@ void main() {
 	vec3 diffuseLight = lightColor * dC;
 	vec3 specularLight = lightColor * sC;
 	// combine all components
-	// color = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texColor0;
-	color = texColor0;
+	color = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texColor0;
+	// color = texColor0;
 }
