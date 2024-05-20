@@ -25,9 +25,6 @@ void ProcTerrain::init()
     int num_points = points_w * points_h;
     int num_tris = (points_w - 1) * (points_h - 1) * 2;
 
-    // the width and height of a triangle in the grid
-    float tri_size = 4.0;
-
     GLfloat tex_zoom = 20;
     float g_groundSize = 20;
     float g_groundY = -0.25;
@@ -41,10 +38,10 @@ void ProcTerrain::init()
     for(int x=0;x<MESHSIZE;x++)
         for (int z = 0; z < MESHSIZE; z++)
             {
-            vertices[x * 4 + z*MESHSIZE * 4 + 0] = glm::vec3(0.0, 0.0, 0.0) + glm::vec3(x*tri_size, 0, z*tri_size);
-            vertices[x * 4 + z*MESHSIZE * 4 + 1] = glm::vec3(tri_size, 0.0, 0.0) + glm::vec3(x*tri_size, 0, z*tri_size);
-            vertices[x * 4 + z*MESHSIZE * 4 + 2] = glm::vec3(tri_size, 0.0, tri_size) + glm::vec3(x*tri_size, 0, z*tri_size);
-            vertices[x * 4 + z*MESHSIZE * 4 + 3] = glm::vec3(0.0, 0.0, tri_size) + glm::vec3(x*tri_size, 0, z*tri_size);
+            vertices[x * 4 + z*MESHSIZE * 4 + 0] = glm::vec3(0.0, 0.0, 0.0) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*MESHSIZE * 4 + 1] = glm::vec3(1, 0.0, 0.0) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*MESHSIZE * 4 + 2] = glm::vec3(1, 0.0, 1) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*MESHSIZE * 4 + 3] = glm::vec3(0.0, 0.0, 1) + glm::vec3(x, 0, z);
             }
 
     //tex coords

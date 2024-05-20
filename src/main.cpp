@@ -51,7 +51,7 @@ public:
 	GLuint GroundVertexArrayID;
 
 	//the image to use as a texture (ground)
-	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture;
+	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture, grass_texture;
 	shared_ptr<Texture> tree1_texture;
 
 	//global data (larger program should be encapsulated)
@@ -238,6 +238,14 @@ public:
 		sand_texture->init();
 		sand_texture->setUnit(0);
 		sand_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
+
+		// load in grass and texture
+		grass_texture = make_shared<Texture>();
+		grass_texture->setFilename(resourceDirectory + "/grass.jpg");
+		grass_texture->init();
+		grass_texture->setUnit(0);
+		grass_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
+
 
 		// load in tree texture
 		tree1_texture = make_shared<Texture>();
@@ -526,7 +534,7 @@ public:
 		palm_tree->draw();
 
 		// draw the ground
-		ground.draw(heightShader, water_texture);
+		ground.draw(heightShader, grass_texture);
 
 		//animation update example
 		sTheta = sin(glfwGetTime());
