@@ -9,11 +9,15 @@
 #include <tiny_obj_loader/tiny_obj_loader.h>
 
 #include "Shape.h"
+#include "GLSL.h"
+#include "Program.h"
+#include "Texture.h"
+
 
 class MultiShape
 {
 public:
-	MultiShape(bool textured);
+	MultiShape(bool textured, const std::shared_ptr<Program> shader, const char* texture_filename) ;
 	virtual ~MultiShape();
     bool loadObjFromFile(std::__1::string &errStr,
         const char* filename,
@@ -31,7 +35,7 @@ public:
     void rotate(float angle, glm::vec3 axis);
 
     void center_and_scale();
-	void draw(const std::shared_ptr<Program> prog) const;
+	void draw();
 
 	glm::vec3 min;
 	glm::vec3 max;
@@ -39,6 +43,11 @@ public:
     std::vector<std::shared_ptr<Shape>> shapes;
 
     glm::mat4 curr_mat;   // holds past rotation, scale etc.
+
+    // for drawing
+    std::shared_ptr<Program> shader;
+    std::shared_ptr<Texture> texture;
+
 
 private:
 	bool texOff;

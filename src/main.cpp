@@ -203,7 +203,7 @@ public:
 		// Initialize the GLSL program that we will use for texture mapping
 		heightShader = make_shared<Program>();
 		heightShader->setVerbose(true);
-		heightShader->setShaderNames(resourceDirectory + "/tex_vert.glsl", resourceDirectory + "/tex_frag0.glsl");
+		heightShader->setShaderNames(resourceDirectory + "/height_vertex.glsl", resourceDirectory + "/height_frag.glsl");
 		if(!heightShader->init()) {
 			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
 			exit(1);
@@ -230,14 +230,14 @@ public:
   		water_texture->setFilename(resourceDirectory + "/water.jpeg");
   		water_texture->init();
   		water_texture->setUnit(0);
-  		water_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
+  		water_texture->setWrapModes(GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT);
 
 		// load in sand texture
 		sand_texture = make_shared<Texture>();
 		sand_texture->setFilename(resourceDirectory + "/sand.jpg");
 		sand_texture->init();
 		sand_texture->setUnit(0);
-		sand_texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+		sand_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
 
 		// load in tree texture
 		tree1_texture = make_shared<Texture>();
@@ -260,18 +260,8 @@ public:
 		const std::string& objectDir = resourceDirectory + "/objects";
 
 		//load in the mesh and make the shape(s)
-		palm_tree = make_shared<MultiShape>(false);
-		//bool rc = palm_tree->loadObjFromFile(errStr, (objectDir + "/palm_tree/palm_tree.obj").c_str());
+		palm_tree = make_shared<MultiShape>(false, texProg, (objectDir + "/trees/_1_tree.jpg").c_str());
 		bool rc = palm_tree->loadObjFromFile(errStr, (objectDir + "/trees/tree1.obj").c_str());
-
-		theBunny = make_shared<MultiShape>(false);
-		rc = theBunny->loadObjFromFile(errStr, (objectDir + "/testing/bunnyNoNorm.obj").c_str());
-
-		sphere = make_shared<MultiShape>(false);
-		rc = sphere->loadObjFromFile(errStr, (objectDir + "/testing/SphereWTex.obj").c_str());
-
-		dummy = make_shared<MultiShape>(false);
-		rc = dummy->loadObjFromFile(errStr, (objectDir + "/testing/dummy.obj").c_str());
 
 		if (!rc) {
 			cerr << errStr << endl;
@@ -528,23 +518,15 @@ public:
 		heightShader->unbind();
 
 		// --- Draw Scene ---
-
 		//draw the palm tree
-		texProg->bind();
-		glUniform1i(texProg->getUniform("flip"), 1);
-
-		tree1_texture->bind(texProg->getUniform("Texture0"));
 		palm_tree->reset_trans();
 		palm_tree->center_and_scale();
 		palm_tree->translate(vec3(0, 0, 0));
 		palm_tree->scale(vec3(2));
-		palm_tree->draw(texProg);
-
-		glUniform1i(texProg->getUniform("flip"), 0);
-		texProg->unbind();
+		palm_tree->draw();
 
 		// draw the ground
-		ground.draw(heightShader, sand_texture);
+		ground.draw(heightShader, water_texture);
 
 		//animation update example
 		sTheta = sin(glfwGetTime());

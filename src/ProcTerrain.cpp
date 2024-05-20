@@ -48,7 +48,7 @@ void ProcTerrain::init()
             }
 
     //tex coords
-    float t = 1.;// / 100;
+    float t = 1. / MESHSIZE * tex_zoom;
     glm::vec2 tex[MESHSIZE * MESHSIZE * 4];
     for (int x = 0; x<MESHSIZE; x++)
         for (int y = 0; y < MESHSIZE; y++)
@@ -121,10 +121,6 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // glEnableVertexAttribArray(1);
-    // glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);

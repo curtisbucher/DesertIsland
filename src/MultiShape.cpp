@@ -3,17 +3,22 @@
 #include <assert.h>
 #include <algorithm>
 
-#include "GLSL.h"
-#include "Program.h"
-
 using namespace std;
 
 // constructor
-MultiShape::MultiShape(bool textured) :
+MultiShape::MultiShape(bool textured, const shared_ptr<Program> shader, const char* texture_filename) :
 min(glm::vec3(0)),
 max(glm::vec3(0))
 {
-    texOff = !textured;
+    this->texOff = !textured;
+    this->shader = shader;
+
+    //read in a load the texture
+    this->texture = make_shared<Texture>();
+    this->texture->setFilename(texture_filename);
+    this->texture->init();
+    this->texture->setUnit(0);
+    this->texture->setWrapModes(GL_REPEAT, GL_REPEAT);
 }
 
 // destructor
@@ -129,13 +134,21 @@ void MultiShape::init()
 }
 
 //always untextured for intro labs until texture mapping
-void MultiShape::draw(const shared_ptr<Program> prog) const
+void MultiShape::draw()
 {
-    // load our objects total transformation
-    glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(this->curr_mat));
+    // bind the shader
+    this->shader->bind();
+
+    // apply the transform matrix
+    glUniformMatrix4fv(this->shader->getUniform("M"), 1, GL_FALSE, glm::value_ptr(this->curr_mat));
+
+    // bind the texture
+    this->texture->bind(this->shader->getUniform("Texture0"));
 
     // draw all the shapes
     for(auto shape: this->shapes){
-        shape->draw(prog);
+        shape->draw(this->shader);
     }
+    // unbind the shader
+    this->shader->unbind();
 }
