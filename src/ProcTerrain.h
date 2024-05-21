@@ -8,6 +8,7 @@
 #include "GLSL.h"
 #include <vector>
 #include <iostream>
+#include "Texture.h"
 
 #define DEFAULT_TEX_ZOOM (1)
 #define DEFAULT_MESH_SIZE (100)
@@ -16,12 +17,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+using namespace std;
+
 class ProcTerrain {
     public:
         ProcTerrain();
         virtual ~ProcTerrain();
-        void init();
-        void draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> texture0, glm::vec3 camera_position);
+        void init(const shared_ptr<Program> shader, const char* texture_filename);
+        void draw(glm::vec3 camera_pos);
     private:
         // buffer objects for communicating with the GPU
         GLuint GrndBuffObj;
@@ -33,6 +36,9 @@ class ProcTerrain {
         // texture
         int tex_zoom;
         int mesh_size;
+        // shader
+        std::shared_ptr<Program> shader;
+        std::shared_ptr<Texture> texture;
 };
 
 void SetModel(glm::vec3 trans, float rotY, float rotX, float sc, std::shared_ptr<Program> curS);

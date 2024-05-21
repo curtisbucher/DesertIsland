@@ -152,3 +152,49 @@ void MultiShape::draw()
     // unbind the shader
     this->shader->unbind();
 }
+
+
+// SKYSPHERE `
+// constructor
+SkySphere::SkySphere(const shared_ptr<Program> shader, const char* day_tex, const char* night_tex) :
+MultiShape(true, shader, day_tex)
+{
+    //read in a load the texture
+    this->texture = make_shared<Texture>();
+    this->texture->setFilename(day_tex);
+    this->texture->init();
+    this->texture->setUnit(2);
+    this->texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+    //read in a load the texture
+    this->night_texture = make_shared<Texture>();
+    this->night_texture->setFilename(night_tex);
+    this->night_texture->init();
+    this->night_texture->setUnit(3);
+    this->night_texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+}
+// destructor
+SkySphere::~SkySphere(){}
+// draw the skysphere
+void SkySphere::draw(float day_night_ratio)
+{
+    // bind the shader
+    this->shader->bind();
+
+    // apply the transform matrix
+    glUniformMatrix4fv(this->shader->getUniform("M"), 1, GL_FALSE, glm::value_ptr(this->curr_mat));
+
+    // pass ratio for going between night and day
+	glUniform1f(this->shader->getUniform("day_night_ratio"), day_night_ratio);
+
+    // bind the textures
+    this->texture->bind(this->shader->getUniform("tex"));
+    this->night_texture->bind(this->shader->getUniform("tex2"));
+
+    // draw all the shapes
+    for(auto shape: this->shapes){
+        shape->draw(this->shader);
+    }
+    // unbind the shader
+    this->shader->unbind();
+}

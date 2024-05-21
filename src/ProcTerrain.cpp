@@ -10,8 +10,12 @@ ProcTerrain::ProcTerrain() :
     g_GiboLen(0),
 
     tex_zoom(DEFAULT_TEX_ZOOM),
-    mesh_size(DEFAULT_MESH_SIZE)
-{}
+    mesh_size(DEFAULT_MESH_SIZE),
+
+    shader(nullptr),
+    texture(nullptr)
+{
+}
 
 
 ProcTerrain::~ProcTerrain()
@@ -19,8 +23,17 @@ ProcTerrain::~ProcTerrain()
 }
 
 #define MESH_SIZE 100
-void ProcTerrain::init()
+void ProcTerrain::init(const shared_ptr<Program> shader, const char* texture_filename)
 {
+    // store the shader
+    this->shader = shader;
+    // load the texture
+    this->texture = make_shared<Texture>();
+    this->texture->setFilename(texture_filename);
+    this->texture->init();
+    this->texture->setUnit(0);
+    this->texture->setWrapModes(GL_REPEAT, GL_REPEAT);
+
     // the dimensions of the grid (in points)
     int points_w = 20;
     int points_h = 20;
@@ -103,13 +116,13 @@ void ProcTerrain::init()
 }
 
 // randomely generate terrain
-void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> texture0, glm::vec3 camera_pos){
-    curS->bind();
+void ProcTerrain::draw(glm::vec3 camera_pos){
+    this->shader->bind();
     glBindVertexArray(GroundVertexArrayID);
-    texture0->bind(curS->getUniform("Texture0"));
+    this->texture->bind(this->shader->getUniform("Texture0"));
 
     // center the ground plane
-    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, curS);
+    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, this->shader);
 
     // pass camera position to shader
     glm::vec3 offset = camera_pos;
@@ -117,13 +130,13 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     offset.x = (int)offset.x;
     offset.z = (int)offset.z;
     // for calculating vertices, decimal
-    glUniform3fv(curS->getUniform("camoff"), 1, &offset[0]);
+    glUniform3fv(this->shader->getUniform("camoff"), 1, &offset[0]);
     // for calculating color, float
-    glUniform3fv(curS->getUniform("campos"), 1, &camera_pos[0]);
+    glUniform3fv(this->shader->getUniform("campos"), 1, &camera_pos[0]);
     // pass mesh size to shader
-    glUniform1i(curS->getUniform("mesh_size"), this->mesh_size);
+    glUniform1i(this->shader->getUniform("mesh_size"), this->mesh_size);
     // pass tex zoom to shader
-    glUniform1i(curS->getUniform("tex_zoom"), this->tex_zoom);
+    glUniform1i(this->shader->getUniform("tex_zoom"), this->tex_zoom);
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
@@ -144,7 +157,7 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(2);
-    curS->unbind();
+    this->shader->unbind();
 }
 
 /* helper function to set model trasnforms */

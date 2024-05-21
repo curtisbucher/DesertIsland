@@ -13,6 +13,7 @@
 #include "Program.h"
 #include "Texture.h"
 
+using namespace std;
 
 class MultiShape
 {
@@ -48,9 +49,21 @@ public:
     std::shared_ptr<Program> shader;
     std::shared_ptr<Texture> texture;
 
-
 private:
 	bool texOff;
 };
+
+// child class for skysphere
+class SkySphere : public MultiShape
+{
+public:
+    SkySphere(const std::shared_ptr<Program> shader, const char* day_text, const char* night_text) ;
+    virtual ~SkySphere();
+    void draw(float day_night_ratio);
+
+private:
+    std::shared_ptr<Texture> night_texture;
+};
+
 
 #endif

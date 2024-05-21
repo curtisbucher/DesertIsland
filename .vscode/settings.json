@@ -72,6 +72,8 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "numbers": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "complex": "cpp",
+        "queue": "cpp"
     }
 }

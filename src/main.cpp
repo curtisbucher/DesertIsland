@@ -30,6 +30,9 @@ using namespace glm;
 #define CAMERA_SPEED 0.5
 #define CAMERA_ROT_SPEED 0.3
 
+// the duration of a day in seconds
+#define DAY_DURATION_S (1 * 60)
+
 class Application : public EventCallbacks
 {
 
@@ -38,10 +41,11 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program - use this one for Blinn-Phong
-	std::shared_ptr<Program> prog, texProg, heightShader;
+	std::shared_ptr<Program> prog, texProg, heightShader, skysphere_shader;
 
 	//our geometry
-	shared_ptr<MultiShape> palm_tree, sphere, theBunny, dummy;
+	shared_ptr<MultiShape> tree1;
+	shared_ptr<SkySphere> skysphere;
 
 	// Terrain Generation
 	ProcTerrain ground;
@@ -53,7 +57,7 @@ public:
 	GLuint GroundVertexArrayID;
 
 	//the image to use as a texture (ground)
-	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture, grass_texture;
+	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture, grass_texture, textureDaySky, textureNightSky;
 	shared_ptr<Texture> tree1_texture;
 
 	//global data (larger program should be encapsulated)
@@ -217,7 +221,6 @@ public:
 		heightShader->addUniform("lightColor");
 		heightShader->addUniform("ambientIntensity");
 		heightShader->addUniform("shineIntensity");
-
 		heightShader->addUniform("flip");
 		heightShader->addUniform("Texture0");
 		heightShader->addUniform("lightPos");
@@ -232,7 +235,35 @@ public:
 		// texture zoom
 		heightShader->addUniform("tex_zoom");
 
+		skysphere_shader = make_shared<Program>();
+		skysphere_shader->setVerbose(true);
+		skysphere_shader->setShaderNames(resourceDirectory + "/skyvertex.glsl", resourceDirectory + "/skyfrag.glsl");
+		skysphere_shader->init();
+		skysphere_shader->addUniform("P");
+		skysphere_shader->addUniform("V");
+		skysphere_shader->addUniform("M");
+		skysphere_shader->addUniform("tex");
+		skysphere_shader->addUniform("tex2");
+		skysphere_shader->addUniform("day_night_ratio");
+		skysphere_shader->addAttribute("vertPos");
+		skysphere_shader->addAttribute("vertNor");
+		skysphere_shader->addAttribute("vertTex");
+
+
 		// -- TEXTURES ---
+		// TODO, make ground texture subclass of texture
+		textureDaySky = make_shared<Texture>();
+  		textureDaySky->setFilename(resourceDirectory + "/skysphere/sphere-day.jpg");
+  		textureDaySky->init();
+  		textureDaySky->setUnit(2);
+  		textureDaySky->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+		textureNightSky = make_shared<Texture>();
+  		textureNightSky->setFilename(resourceDirectory + "/skysphere/sphere-night.jpeg");
+  		textureNightSky->init();
+  		textureNightSky->setUnit(3);
+  		textureNightSky->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
 		//read in a load the texture
 		water_texture = make_shared<Texture>();
   		water_texture->setFilename(resourceDirectory + "/water.jpeg");
@@ -254,7 +285,6 @@ public:
 		grass_texture->setUnit(0);
 		grass_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
 
-
 		// load in tree texture
 		tree1_texture = make_shared<Texture>();
 		tree1_texture->setFilename(resourceDirectory + "/objects/trees/_1_tree.jpg");
@@ -268,24 +298,25 @@ public:
 	{
 		// Initialize mesh
 		// Load geometry
- 		// Some obj files contain material information.We'll ignore them for this assignment.
- 		// vector<tinyobj::shape_t> TOshapes;
- 		// vector<tinyobj::material_t> objMaterials;
 		string errStr;
-
 		const std::string& objectDir = resourceDirectory + "/objects";
 
-		//load in the mesh and make the shape(s)
-		palm_tree = make_shared<MultiShape>(false, texProg, (objectDir + "/trees/_1_tree.jpg").c_str());
-		bool rc = palm_tree->loadObjFromFile(errStr, (objectDir + "/trees/tree1.obj").c_str());
+		// trees
+		tree1 = make_shared<MultiShape>(false, texProg, (objectDir + "/trees/_1_tree.jpg").c_str());
+		bool rc = tree1->loadObjFromFile(errStr, (objectDir + "/trees/tree1.obj").c_str());
 
+		// skysphere
+		skysphere = make_shared<SkySphere>(skysphere_shader, (resourceDirectory + "/skysphere/sphere-night.jpeg").c_str(), (resourceDirectory + "/skysphere/sphere-day.jpg").c_str());
+		rc = skysphere->loadObjFromFile(errStr, (resourceDirectory + "/skysphere/sphereWTex.obj").c_str());
+
+		// error handling
 		if (!rc) {
 			cerr << errStr << endl;
 			exit(-1);
 		}
 
 		//code to load in the ground plane (CPU defined data passed to GPU)
-		ground.init();
+		ground.init(heightShader, (resourceDirectory + "/grass.jpg").c_str());
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -387,20 +418,6 @@ public:
 			break;
   		}
 	}
-
-	/* helper function to set model trasnforms */
-  	void SetModel(vec3 trans, float rotY, float rotX, float sc, shared_ptr<Program> curS) {
-  		mat4 Trans = glm::translate( glm::mat4(1.0f), trans);
-  		mat4 RotX = glm::rotate( glm::mat4(1.0f), rotX, vec3(1, 0, 0));
-  		mat4 RotY = glm::rotate( glm::mat4(1.0f), rotY, vec3(0, 1, 0));
-  		mat4 ScaleS = glm::scale(glm::mat4(1.0f), vec3(sc));
-  		mat4 ctm = Trans*RotX*RotY*ScaleS;
-  		glUniformMatrix4fv(curS->getUniform("M"), 1, GL_FALSE, value_ptr(ctm));
-  	}
-
-	void setModel(std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack>M) {
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
-   	}
 
 	void render() {
 		// Get current frame buffer size.
@@ -507,19 +524,42 @@ public:
 		glUniform1f(heightShader->getUniform("shineIntensity"), shine_intensity);
 		heightShader->unbind();
 
+		// Sky Sphere Shader
+		skysphere_shader->bind();
+		// strip the camera translation from the view matrix for the skybox, so it stays put
+		// https://learnopengl.com/Advanced-OpenGL/Cubemaps
+		glm::mat4 ViewBox = glm::mat4(glm::mat3(View->topMatrix()));
+		// pass modified view and projection matrices
+		glUniformMatrix4fv(skysphere_shader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(skysphere_shader->getUniform("V"), 1, GL_FALSE, value_ptr(ViewBox));
+		skysphere_shader->unbind();
+
+		/** --- Draw The Skysphere --- **/
+		// disable the z buffer test
+		glDisable(GL_DEPTH_TEST);
+		// draw big background sphere
+		skysphere->reset_trans();
+		skysphere->center_and_scale();
+		skysphere->translate(vec3(0, 0, 0));
+		skysphere->scale(vec3(1));
+		skysphere->draw(0.5 * sTheta + 0.5);
+		// reendable the z buffer test for drawing the rest of the scene
+		glEnable(GL_DEPTH_TEST);
+		/* --- */
+
 		// --- Draw Scene ---
 		//draw the palm tree
-		palm_tree->reset_trans();
-		palm_tree->center_and_scale();
-		palm_tree->translate(vec3(0, 0, 0));
-		palm_tree->scale(vec3(2));
-		palm_tree->draw();
+		tree1->reset_trans();
+		tree1->center_and_scale();
+		tree1->translate(vec3(0, 0, 0));
+		tree1->scale(vec3(2));
+		tree1->draw();
 
 		// draw the ground
-		ground.draw(heightShader, grass_texture, camera_trans);
+		ground.draw( camera_trans);
 
 		//animation update example
-		sTheta = sin(glfwGetTime());
+		sTheta = sin(glfwGetTime() * 1 / DAY_DURATION_S);
 		eTheta = std::max(0.0f, (float)sin(glfwGetTime()));
 		hTheta = std::max(0.0f, (float)cos(glfwGetTime()));
 
