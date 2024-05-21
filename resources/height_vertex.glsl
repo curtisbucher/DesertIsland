@@ -7,11 +7,15 @@ uniform mat4 V;
 uniform mat4 M;
 uniform vec3 lightPos;
 
+uniform vec3 camoff;
+
 out vec2 vTexCoord;
 
 out vec3 fragNor;
 out vec3 lightDir;
 out vec3 EPos;
+
+
 
 // Hash function to generate random numbers
 float hash(float n) {
@@ -59,12 +63,14 @@ void main() {
   vec4 vPosition;
 
   /* First model transforms */
-  gl_Position = P * V * M * vec4(vertPos.x, get_height(vertPos.xzy), vertPos.z, 1.0);
+  // gl_Position = P * V * M * vec4(vertPos.x, get_height(vertPos.xzy), vertPos.z, 1.0);
+
+  vec4 vp = vec4(vertPos.xyz - camoff, 1);
 
   /* get other 3 vertices */
-  vec3 v1 = vertPos.xyz;
-  vec3 v2 = vertPos.xyz + vec3(1.0, 0.0, 0.0);
-  vec3 v3 = vertPos.xyz + vec3(0.0, 0.0, -1.0);
+  vec3 v1 = vp.xyz;
+  vec3 v2 = vp.xyz + vec3(1.0, 0.0, 0.0);
+  vec3 v3 = vp.xyz + vec3(0.0, 0.0, -1.0);
 
   vec3 pos1 = vec3(v1.x, get_height(v1.xzy), v1.z);
   vec3 pos2 = vec3(v2.x, get_height(v2.xzy), v2.z);
@@ -72,10 +78,22 @@ void main() {
   // calculate normal
   vec3 normal = normalize(cross(pos2 - pos1, pos3 - pos1));
   fragNor = (M * vec4(normal, 0.0)).xyz;
-
-  lightDir = lightPos - (M*vertPos).xyz;
+  lightDir = lightPos - (M*vp).xyz;
 
   /* pass through the texture coordinates to be interpolated */
-  vTexCoord = vertTex;
-  EPos = (M*vertPos).xyz;
+  // vTexCoord = vertTex;
+  // EPos = (M*vertPos).xyz;
+
+  // texture position
+  vec4 tpos = vertPos;
+	tpos.z -=camoff.z;
+	tpos.x -=camoff.x;
+
+	tpos =  M * tpos;
+
+	tpos.y += get_height(vp.xzy);
+	EPos = tpos.xyz;
+
+	gl_Position = P * V * tpos;
+	vTexCoord = vertTex;
 }

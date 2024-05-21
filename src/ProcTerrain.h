@@ -18,7 +18,7 @@ class ProcTerrain {
         ProcTerrain();
         virtual ~ProcTerrain();
         void init();
-        void draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> texture0);
+        void draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> texture0, glm::vec3 camera_position);
     private:
         GLuint GrndBuffObj;
         GLuint GrndNorBuffObj;

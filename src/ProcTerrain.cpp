@@ -15,7 +15,7 @@ ProcTerrain::~ProcTerrain()
 {
 }
 
-#define MESHSIZE 20
+#define MESHSIZE 100
 void ProcTerrain::init()
 {
     // the dimensions of the grid (in points)
@@ -45,7 +45,7 @@ void ProcTerrain::init()
             }
 
     //tex coords
-    float t = 1. / MESHSIZE * tex_zoom;
+    float t = 1. / 100;
     glm::vec2 tex[MESHSIZE * MESHSIZE * 4];
     for (int x = 0; x<MESHSIZE; x++)
         for (int y = 0; y < MESHSIZE; y++)
@@ -103,13 +103,23 @@ void ProcTerrain::init()
 }
 
 // randomely generate terrain
-void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> texture0){
+void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> texture0, glm::vec3 camera_pos){
     curS->bind();
     glBindVertexArray(GroundVertexArrayID);
     texture0->bind(curS->getUniform("Texture0"));
 
     // center the ground plane
     SetModel(glm::vec3(-MESHSIZE/2, 0, -MESHSIZE/2), 0, 0, 1, curS);
+
+    // pass camera position to shader
+    glm::vec3 offset = camera_pos;
+    offset.y = 0;
+    offset.x = (int)offset.x;
+    offset.z = (int)offset.z;
+    // for calculating vertices, decimal
+    glUniform3fv(curS->getUniform("camoff"), 1, &offset[0]);
+    // for calculating color, float
+    glUniform3fv(curS->getUniform("campos"), 1, &camera_pos[0]);
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);

@@ -223,8 +223,8 @@ public:
 		heightShader->addAttribute("vertNor");
 		heightShader->addAttribute("vertTex");
 		// // camera position and offset
-		// heightShader->addUniform("camoff");
-		// heightShader->addUniform("campos");
+		heightShader->addUniform("camoff");
+		heightShader->addUniform("campos");
 
 
 		// -- TEXTURES ---
@@ -508,7 +508,7 @@ public:
 		palm_tree->draw();
 
 		// draw the ground
-		ground.draw(heightShader, grass_texture);
+		ground.draw(heightShader, grass_texture, camera_trans);
 
 		//animation update example
 		sTheta = sin(glfwGetTime());

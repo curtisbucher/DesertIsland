@@ -14,9 +14,17 @@ in vec3 fragNor;
 in vec3 lightDir;
 in vec3 EPos;
 
+uniform vec3 camoff;
+uniform vec3 campos;
+
 void main() {
+
+	vec2 texcoords=vTexCoord;
+	float t=1./100.;
+	texcoords -= vec2(camoff.x,camoff.z)*t;
+
 	// get texture color
-	vec4 texColor0 = texture(Texture0, vTexCoord);
+	vec4 texColor0 = texture(Texture0, texcoords);
 
 	// calculate lighting
 	vec3 normal = normalize(fragNor);
@@ -36,5 +44,11 @@ void main() {
 	vec3 specularLight = lightColor * sC;
 	// combine all components
 	color = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texColor0;
-	// color = texColor0;
+
+	// fade out
+	float len = length(EPos.xz+campos.xz);
+	len-=41;
+	len/=8.;
+	len=clamp(len,0,1);
+	color.a=1-len;
 }
