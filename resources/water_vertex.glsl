@@ -19,7 +19,7 @@ void main() {
   // calculate position
   vec4 vp = vec4(vertPos.xyz - camoff, 1);
 
-  fragNor = vec3(0, 1, 0);
+  fragNor = vec3(0, -1, 0);
   lightDir = lightPos - (M*vp).xyz;
 
   // texture position
