@@ -150,7 +150,7 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<T
     texture->bind(shader->getUniform("Texture0"));
 
     // center the ground plane
-    SetModel(glm::vec3(-this->mesh_size/2, 2, -this->mesh_size/2), 0, 0, 1, shader);
+    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, shader);
 
     // pass camera position to shader
     glm::vec3 offset = camera_pos;

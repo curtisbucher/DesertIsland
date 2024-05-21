@@ -73,8 +73,10 @@ float get_height(vec3 pos){
     PARAM_BASE_HEIGHT_FREQUENCY,
     PARAM_BASE_HEIGHT_PERSISTENCE);
   baseheight = pow(baseheight, PARAM_BASE_HEIGHT_POW)*3;
+
+  height *= PARAM_HEIGHT_SCALE;
+  height -= PARAM_HEIGHT_SCALE/2;
   height = baseheight*height;
-  height *= PARAM_HEIGHT_SCALE - (0.5 * PARAM_HEIGHT_SCALE) + PARAM_HEIGHT_TRANS;
   return height;
 
 }
