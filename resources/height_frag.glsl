@@ -1,6 +1,9 @@
 #version 330 core
+
+// texture image
 uniform sampler2D Texture0;
 
+// color and normal of the fragment
 uniform int flip;
 uniform vec3 lightColor;
 uniform float ambientIntensity;
@@ -14,13 +17,17 @@ in vec3 fragNor;
 in vec3 lightDir;
 in vec3 EPos;
 
+//camera offset
 uniform vec3 camoff;
 uniform vec3 campos;
+
+uniform int tex_zoom;
+uniform int mesh_size;
 
 void main() {
 
 	vec2 texcoords=vTexCoord;
-	float t=1./1.;
+	float t=1. / tex_zoom;
 	texcoords -= vec2(camoff.x,camoff.z)*t;
 
 	// get texture color

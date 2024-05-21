@@ -7,15 +7,18 @@ ProcTerrain::ProcTerrain() :
     GrndTexBuffObj(0),
     GIndxBuffObj(0),
     GroundVertexArrayID(0),
-    g_GiboLen(0)
-{
-}
+    g_GiboLen(0),
+
+    tex_zoom(DEFAULT_TEX_ZOOM),
+    mesh_size(DEFAULT_MESH_SIZE)
+{}
+
 
 ProcTerrain::~ProcTerrain()
 {
 }
 
-#define MESHSIZE 100
+#define MESH_SIZE 100
 void ProcTerrain::init()
 {
     // the dimensions of the grid (in points)
@@ -34,26 +37,26 @@ void ProcTerrain::init()
     float* GrndNorm = (float*) malloc(sizeof(float) * num_points * 3);
     static GLfloat* GrndTex = (float*) malloc(sizeof(float) * num_points * 2);
 
-    glm::vec3 vertices[MESHSIZE * MESHSIZE * 4];
-    for(int x=0;x<MESHSIZE;x++)
-        for (int z = 0; z < MESHSIZE; z++)
+    glm::vec3 vertices[MESH_SIZE*MESH_SIZE * 4];
+    for(int x=0;x<this->mesh_size;x++)
+        for (int z = 0; z < this->mesh_size; z++)
             {
-            vertices[x * 4 + z*MESHSIZE * 4 + 0] = glm::vec3(0.0, 0.0, 0.0) + glm::vec3(x, 0, z);
-            vertices[x * 4 + z*MESHSIZE * 4 + 1] = glm::vec3(1, 0.0, 0.0) + glm::vec3(x, 0, z);
-            vertices[x * 4 + z*MESHSIZE * 4 + 2] = glm::vec3(1, 0.0, 1) + glm::vec3(x, 0, z);
-            vertices[x * 4 + z*MESHSIZE * 4 + 3] = glm::vec3(0.0, 0.0, 1) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*this->mesh_size * 4 + 0] = glm::vec3(0.0, 0.0, 0.0) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*this->mesh_size * 4 + 1] = glm::vec3(1, 0.0, 0.0) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*this->mesh_size * 4 + 2] = glm::vec3(1, 0.0, 1) + glm::vec3(x, 0, z);
+            vertices[x * 4 + z*this->mesh_size * 4 + 3] = glm::vec3(0.0, 0.0, 1) + glm::vec3(x, 0, z);
             }
 
     //tex coords
     float t = 1. / 1;
-    glm::vec2 tex[MESHSIZE * MESHSIZE * 4];
-    for (int x = 0; x<MESHSIZE; x++)
-        for (int y = 0; y < MESHSIZE; y++)
+    glm::vec2 tex[MESH_SIZE * MESH_SIZE * 4];
+    for (int x = 0; x<this->mesh_size; x++)
+        for (int y = 0; y < this->mesh_size; y++)
         {
-            tex[x * 4 + y*MESHSIZE * 4 + 0] = glm::vec2(0.0, 0.0)+ glm::vec2(x, y)*t;
-            tex[x * 4 + y*MESHSIZE * 4 + 1] = glm::vec2(t, 0.0)+ glm::vec2(x, y)*t;
-            tex[x * 4 + y*MESHSIZE * 4 + 2] = glm::vec2(t, t)+ glm::vec2(x, y)*t;
-            tex[x * 4 + y*MESHSIZE * 4 + 3] = glm::vec2(0.0, t)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*this->mesh_size * 4 + 0] = glm::vec2(0.0, 0.0)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*this->mesh_size * 4 + 1] = glm::vec2(t, 0.0)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*this->mesh_size * 4 + 2] = glm::vec2(t, t)+ glm::vec2(x, y)*t;
+            tex[x * 4 + y*this->mesh_size * 4 + 3] = glm::vec2(0.0, t)+ glm::vec2(x, y)*t;
         }
 
     for(int i = 0; i < points_w; i++) {
@@ -66,9 +69,9 @@ void ProcTerrain::init()
     }
 
     // elements
-    GLushort elements[MESHSIZE * MESHSIZE * 6];
+    GLushort elements[MESH_SIZE * MESH_SIZE * 6];
     int ind = 0;
-    for (int i = 0; i<MESHSIZE * MESHSIZE * 6; i+=6, ind+=4){
+    for (int i = 0; i<this->mesh_size * this->mesh_size * 6; i+=6, ind+=4){
         elements[i + 0] = ind + 0;
         elements[i + 1] = ind + 1;
         elements[i + 2] = ind + 2;
@@ -81,11 +84,10 @@ void ProcTerrain::init()
     glGenVertexArrays(1, &GroundVertexArrayID);
     glBindVertexArray(GroundVertexArrayID);
 
-    g_GiboLen = MESHSIZE * MESHSIZE * 6;//6;
+    g_GiboLen = this->mesh_size * this->mesh_size * 6;
     glGenBuffers(1, &GrndBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(GrndPos), GrndPos, GL_DYNAMIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * MESHSIZE * MESHSIZE * 4, vertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * this->mesh_size * this->mesh_size * 4, vertices, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &GrndNorBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
@@ -93,13 +95,11 @@ void ProcTerrain::init()
 
     glGenBuffers(1, &GrndTexBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(GrndTex), GrndTex, GL_STATIC_DRAW);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * MESHSIZE * MESHSIZE * 4, tex, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * this->mesh_size * this->mesh_size * 4, tex, GL_STATIC_DRAW);
 
     glGenBuffers(1, &GIndxBuffObj);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*MESHSIZE * MESHSIZE * 6, elements, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort)*this->mesh_size * this->mesh_size * 6, elements, GL_STATIC_DRAW);
 }
 
 // randomely generate terrain
@@ -109,7 +109,7 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     texture0->bind(curS->getUniform("Texture0"));
 
     // center the ground plane
-    SetModel(glm::vec3(-MESHSIZE/2, 0, -MESHSIZE/2), 0, 0, 1, curS);
+    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, curS);
 
     // pass camera position to shader
     glm::vec3 offset = camera_pos;
@@ -120,6 +120,10 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     glUniform3fv(curS->getUniform("camoff"), 1, &offset[0]);
     // for calculating color, float
     glUniform3fv(curS->getUniform("campos"), 1, &camera_pos[0]);
+    // pass mesh size to shader
+    glUniform1i(curS->getUniform("mesh_size"), this->mesh_size);
+    // pass tex zoom to shader
+    glUniform1i(curS->getUniform("tex_zoom"), this->tex_zoom);
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);

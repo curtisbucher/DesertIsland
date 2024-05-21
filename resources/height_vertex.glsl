@@ -17,6 +17,18 @@ out vec3 EPos;
 
 
 
+// Default values
+#define PARAM_HEIGHT_OCTAVES (8)
+#define PARAM_HEIGHT_FREQUENCY (0.02)
+#define PARAM_HEIGHT_PERSISTENCE (0.5)
+#define PARAM_BASE_HEIGHT_OCTAVES (8)
+#define PARAM_BASE_HEIGHT_FREQUENCY (0.02)
+#define PARAM_BASE_HEIGHT_PERSISTENCE (0.5)
+
+#define PARAM_BASE_HEIGHT_POW (5)
+
+#define PARAM_HEIGHT_SCALE (60)
+
 // Hash function to generate random numbers
 float hash(float n) {
   return fract(sin(n) * 753.5453123);
@@ -51,21 +63,23 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 
 // Function to get the height of the terrain
 float get_height(vec3 pos){
-  float height = noise(pos.xzy, 11, 0.05, 0.5);
-  float baseheight = noise(pos.xzy, 4, 0.004, 0.3);
-  baseheight = pow(baseheight, 5)*3;
+  float height = noise(pos.xzy,
+    PARAM_HEIGHT_OCTAVES,
+    PARAM_HEIGHT_FREQUENCY,
+    PARAM_HEIGHT_PERSISTENCE);
+  float baseheight = noise(pos.xzy,
+    PARAM_BASE_HEIGHT_OCTAVES,
+    PARAM_BASE_HEIGHT_FREQUENCY,
+    PARAM_BASE_HEIGHT_PERSISTENCE);
+  baseheight = pow(baseheight, PARAM_BASE_HEIGHT_POW)*3;
   height = baseheight*height;
-  height*=60;
+  height *= PARAM_HEIGHT_SCALE - (0.5 * PARAM_HEIGHT_SCALE);
   return height;
 
 }
 
 void main() {
-  vec4 vPosition;
-
-  /* First model transforms */
-  // gl_Position = P * V * M * vec4(vertPos.x, get_height(vertPos.xzy), vertPos.z, 1.0);
-
+  // calculate position
   vec4 vp = vec4(vertPos.xyz - camoff, 1);
 
   /* get other 3 vertices */
@@ -73,28 +87,22 @@ void main() {
   vec3 v2 = vp.xyz + vec3(1.0, 0.0, 0.0);
   vec3 v3 = vp.xyz + vec3(0.0, 0.0, -1.0);
 
+  /* calculate normal */
   vec3 pos1 = vec3(v1.x, get_height(v1.xzy), v1.z);
   vec3 pos2 = vec3(v2.x, get_height(v2.xzy), v2.z);
   vec3 pos3 = vec3(v3.x, get_height(v3.xzy), v3.z);
-  // calculate normal
+
   vec3 normal = normalize(cross(pos2 - pos1, pos3 - pos1));
   fragNor = (M * vec4(normal, 0.0)).xyz;
   lightDir = lightPos - (M*vp).xyz;
 
-  /* pass through the texture coordinates to be interpolated */
-  // vTexCoord = vertTex;
-  // EPos = (M*vertPos).xyz;
-
   // texture position
-  vec4 tpos = vertPos;
-	tpos.z -=camoff.z;
-	tpos.x -=camoff.x;
-
+  vec4 tpos = vp;
 	tpos =  M * tpos;
-
 	tpos.y += get_height(vp.xzy);
-	EPos = tpos.xyz;
 
+  // pass position to fragment shader
+  EPos = tpos.xyz;
 	gl_Position = P * V * tpos;
 	vTexCoord = vertTex;
 }

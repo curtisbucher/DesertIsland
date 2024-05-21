@@ -27,6 +27,8 @@ using namespace glm;
 
 #define START_CAMERA_TRANS vec3(-1.8,-0.8, -4.2)
 #define START_CAMERA_ROT vec3(0.2, -0.8, 0)
+#define CAMERA_SPEED 0.5
+#define CAMERA_ROT_SPEED 0.3
 
 class Application : public EventCallbacks
 {
@@ -78,35 +80,35 @@ public:
 		}
 		// Rotation
 		if (key == GLFW_KEY_A) {
-			camera_rot.y -= 0.2;
+			camera_rot.y -= CAMERA_ROT_SPEED;
 		}
 		if (key == GLFW_KEY_D) {
-			camera_rot.y += 0.2;
+			camera_rot.y += CAMERA_ROT_SPEED;
 		}
 		if (key == GLFW_KEY_W) {
-			camera_rot.x -= 0.2;
+			camera_rot.x -= CAMERA_ROT_SPEED;
 		}
 		if (key == GLFW_KEY_S) {
-			camera_rot.x += 0.2;
+			camera_rot.x += CAMERA_ROT_SPEED;
 		}
 		if (key == GLFW_KEY_Z) {
-			camera_trans.z -= 0.2;
+			camera_trans.z -= CAMERA_ROT_SPEED;
 		}
 		if (key == GLFW_KEY_X) {
-			camera_trans.z += 0.2;
+			camera_trans.z += CAMERA_ROT_SPEED;
 		}
 		// Translation
 		if (key == GLFW_KEY_UP) {
-			camera_trans += vec3(0, 0, 0.2) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
+			camera_trans += vec3(0, 0, CAMERA_SPEED) * mat3_cast(quat(camera_rot));
 		}
 		if (key == GLFW_KEY_DOWN) {
-			camera_trans -= vec3(0, 0, 0.2) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
+			camera_trans -= vec3(0, 0, CAMERA_SPEED) * mat3_cast(quat(camera_rot));
 		}
 		if (key == GLFW_KEY_LEFT) {
-			camera_trans += vec3(0.2, 0, 0) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
+			camera_trans += vec3(CAMERA_SPEED, 0, 0) * mat3_cast(quat(camera_rot));
 		}
 		if (key == GLFW_KEY_RIGHT) {
-			camera_trans -= vec3(0.2, 0, 0) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
+			camera_trans -= vec3(CAMERA_SPEED, 0, 0) * mat3_cast(quat(camera_rot));
 		}
 		// Light translation
 		if (key == GLFW_KEY_Q) {
@@ -222,10 +224,13 @@ public:
 		heightShader->addAttribute("vertPos");
 		heightShader->addAttribute("vertNor");
 		heightShader->addAttribute("vertTex");
-		// // camera position and offset
+		// camera position and offset
 		heightShader->addUniform("camoff");
 		heightShader->addUniform("campos");
-
+		// mesh size
+		heightShader->addUniform("mesh_size");
+		// texture zoom
+		heightShader->addUniform("tex_zoom");
 
 		// -- TEXTURES ---
 		//read in a load the texture
@@ -281,6 +286,9 @@ public:
 
 		//code to load in the ground plane (CPU defined data passed to GPU)
 		ground.init();
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	//directly pass quad for the ground to the GPU
