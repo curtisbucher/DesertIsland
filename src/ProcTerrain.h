@@ -25,7 +25,7 @@ class ProcTerrain {
         virtual ~ProcTerrain();
         void init(const shared_ptr<Program> shader, const char* texture_filename);
         void draw(glm::vec3 camera_pos);
-        void drawPlane();
+        void drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos);
     private:
         // buffer objects for communicating with the GPU
         GLuint GrndBuffObj;

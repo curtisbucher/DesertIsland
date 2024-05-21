@@ -129,9 +129,46 @@ void ProcTerrain::draw(glm::vec3 camera_pos){
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    // glEnableVertexAttribArray(1);
-    // glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+    // draw!
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
+    glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
+
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    this->shader->unbind();
+}
+
+// Draw a plane, for the waterline
+void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos) {
+    // draw plane at y = 0, using same xy coords
+    shader->bind();
+    glBindVertexArray(GroundVertexArrayID);
+    texture->bind(shader->getUniform("Texture0"));
+
+    // center the ground plane
+    SetModel(glm::vec3(-this->mesh_size/2, 2, -this->mesh_size/2), 0, 0, 1, shader);
+
+    // pass camera position to shader
+    glm::vec3 offset = camera_pos;
+    offset.y = 0;
+    offset.x = (int)offset.x;
+    offset.z = (int)offset.z;
+    // for calculating vertices, decimal
+    glUniform3fv(shader->getUniform("camoff"), 1, &offset[0]);
+    // for calculating color, float
+    glUniform3fv(shader->getUniform("campos"), 1, &camera_pos[0]);
+    // pass mesh size to shader
+    glUniform1i(shader->getUniform("mesh_size"), this->mesh_size);
+    // pass tex zoom to shader
+    glUniform1i(shader->getUniform("tex_zoom"), this->tex_zoom);
+
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
@@ -143,14 +180,7 @@ void ProcTerrain::draw(glm::vec3 camera_pos){
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-    // glDisableVertexAttribArray(2);
-    this->shader->unbind();
-}
-
-// Draw a plane, for the waterline
-void ProcTerrain::drawPlane() {
-    // TODO: implement
-    return;
+    shader->unbind();
 }
 
 /* helper function to set model trasnforms */

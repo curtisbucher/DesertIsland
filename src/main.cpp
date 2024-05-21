@@ -41,7 +41,7 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program - use this one for Blinn-Phong
-	std::shared_ptr<Program> prog, texProg, heightShader, skysphere_shader;
+	std::shared_ptr<Program> prog, texProg, heightShader, skysphere_shader, water_shader;
 
 	//our geometry
 	shared_ptr<MultiShape> tree1;
@@ -248,6 +248,36 @@ public:
 		skysphere_shader->addAttribute("vertPos");
 		skysphere_shader->addAttribute("vertNor");
 		skysphere_shader->addAttribute("vertTex");
+
+		// water shader
+		water_shader = make_shared<Program>();
+		water_shader->setVerbose(true);
+		water_shader->setShaderNames(resourceDirectory + "/water_vertex.glsl", resourceDirectory + "/water_frag.glsl");
+		if(!water_shader->init()) {
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		water_shader->addUniform("P");
+		water_shader->addUniform("V");
+		water_shader->addUniform("M");
+		// lighting
+		water_shader->addUniform("lightColor");
+		water_shader->addUniform("ambientIntensity");
+		water_shader->addUniform("shineIntensity");
+		water_shader->addUniform("flip");
+		water_shader->addUniform("Texture0");
+		water_shader->addUniform("lightPos");
+		water_shader->addAttribute("vertPos");
+		water_shader->addAttribute("vertNor");
+		water_shader->addAttribute("vertTex");
+		// camera position and offset
+		water_shader->addUniform("camoff");
+		water_shader->addUniform("campos");
+		// mesh size
+		water_shader->addUniform("mesh_size");
+		// texture zoom
+		water_shader->addUniform("tex_zoom");
+
 
 
 		// -- TEXTURES ---
@@ -524,6 +554,18 @@ public:
 		glUniform1f(heightShader->getUniform("shineIntensity"), shine_intensity);
 		heightShader->unbind();
 
+		// Height Shader
+		water_shader->bind();
+		glUniformMatrix4fv(water_shader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(water_shader->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(water_shader->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+
+		glUniform3f(water_shader->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
+		glUniform3f(water_shader->getUniform("lightColor"), light_color.r, light_color.g, light_color.b);
+		glUniform1f(water_shader->getUniform("ambientIntensity"), ambient_intensity);
+		glUniform1f(water_shader->getUniform("shineIntensity"), shine_intensity);
+		water_shader->unbind();
+
 		// Sky Sphere Shader
 		skysphere_shader->bind();
 		// strip the camera translation from the view matrix for the skybox, so it stays put
@@ -557,6 +599,7 @@ public:
 
 		// draw the ground
 		ground.draw( camera_trans);
+		ground.drawPlane(water_shader, water_texture, camera_trans);
 
 		//animation update example
 		sTheta = sin(glfwGetTime() * 1 / DAY_DURATION_S);

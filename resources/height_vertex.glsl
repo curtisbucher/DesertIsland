@@ -28,6 +28,7 @@ out vec3 EPos;
 #define PARAM_BASE_HEIGHT_POW (5)
 
 #define PARAM_HEIGHT_SCALE (60)
+#define PARAM_HEIGHT_TRANS (-10)
 
 // Hash function to generate random numbers
 float hash(float n) {
@@ -73,7 +74,7 @@ float get_height(vec3 pos){
     PARAM_BASE_HEIGHT_PERSISTENCE);
   baseheight = pow(baseheight, PARAM_BASE_HEIGHT_POW)*3;
   height = baseheight*height;
-  height *= PARAM_HEIGHT_SCALE - (0.5 * PARAM_HEIGHT_SCALE);
+  height *= PARAM_HEIGHT_SCALE - (0.5 * PARAM_HEIGHT_SCALE) + PARAM_HEIGHT_TRANS;
   return height;
 
 }
