@@ -51,12 +51,13 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 
 // Function to get the height of the terrain
 float get_height(vec3 pos){
-  float height = noise(pos.xzy, 11, 0.5, 0.5);
-  float baseheight = noise(pos.xzy, 4, 0.4, 0.3);
+  float height = noise(pos.xzy, 11, 0.05, 0.5);
+  float baseheight = noise(pos.xzy, 4, 0.004, 0.3);
   baseheight = pow(baseheight, 5)*3;
   height = baseheight*height;
-  return height;
   height*=60;
+  return height;
+
 }
 
 void main() {

@@ -20,7 +20,7 @@ uniform vec3 campos;
 void main() {
 
 	vec2 texcoords=vTexCoord;
-	float t=1./100.;
+	float t=1./1.;
 	texcoords -= vec2(camoff.x,camoff.z)*t;
 
 	// get texture color
@@ -33,8 +33,6 @@ void main() {
 	}
 	vec3 light = normalize(lightDir);
 	float dC = clamp(dot(normal, light), 0, 1);
-
-
 	vec3 halfV = normalize(-1*EPos) + normalize(light);
 	float sC = pow(max(dot(normalize(halfV), normal), 0), shineIntensity);
 

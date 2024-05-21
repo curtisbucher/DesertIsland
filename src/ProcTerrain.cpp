@@ -45,7 +45,7 @@ void ProcTerrain::init()
             }
 
     //tex coords
-    float t = 1. / 100;
+    float t = 1. / 1;
     glm::vec2 tex[MESHSIZE * MESHSIZE * 4];
     for (int x = 0; x<MESHSIZE; x++)
         for (int y = 0; y < MESHSIZE; y++)
