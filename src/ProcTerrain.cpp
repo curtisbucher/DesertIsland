@@ -108,8 +108,8 @@ void ProcTerrain::draw(std::shared_ptr<Program> curS, std::shared_ptr<Texture> t
     glBindVertexArray(GroundVertexArrayID);
     texture0->bind(curS->getUniform("Texture0"));
 
-    // //draw the ground plane
-    SetModel(glm::vec3(0, -1, 0), 0, 0, 1, curS);
+    // center the ground plane
+    SetModel(glm::vec3(-MESHSIZE/2, 0, -MESHSIZE/2), 0, 0, 1, curS);
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);

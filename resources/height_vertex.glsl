@@ -13,10 +13,12 @@ out vec3 fragNor;
 out vec3 lightDir;
 out vec3 EPos;
 
+// Hash function to generate random numbers
 float hash(float n) {
   return fract(sin(n) * 753.5453123);
 }
 
+// Simplex noise function
 float snoise(vec3 x){
 	vec3 p = floor(x);
 	vec3 f = fract(x);
@@ -43,17 +45,14 @@ float noise(vec3 position, int octaves, float frequency, float persistence) {
 	return total / maxAmplitude;
 	}
 
-float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
-
+// Function to get the height of the terrain
 float get_height(vec3 pos){
   float height = noise(pos.xzy, 11, 0.5, 0.5);
   float baseheight = noise(pos.xzy, 4, 0.4, 0.3);
   baseheight = pow(baseheight, 5)*3;
   height = baseheight*height;
   return height;
-  // height*=60;
+  height*=60;
 }
 
 void main() {
@@ -68,14 +67,11 @@ void main() {
   vec3 v3 = vertPos.xyz + vec3(0.0, 0.0, -1.0);
 
   vec3 pos1 = vec3(v1.x, get_height(v1.xzy), v1.z);
-
   vec3 pos2 = vec3(v2.x, get_height(v2.xzy), v2.z);
   vec3 pos3 = vec3(v3.x, get_height(v3.xzy), v3.z);
-
   // calculate normal
   vec3 normal = normalize(cross(pos2 - pos1, pos3 - pos1));
   fragNor = (M * vec4(normal, 0.0)).xyz;
-
 
   lightDir = lightPos - (M*vertPos).xyz;
 

@@ -97,16 +97,16 @@ public:
 		}
 		// Translation
 		if (key == GLFW_KEY_UP) {
-			camera_trans.y -= 0.2;
+			camera_trans += vec3(0, 0, 0.2) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
 		}
 		if (key == GLFW_KEY_DOWN) {
-			camera_trans.y += 0.2;
+			camera_trans -= vec3(0, 0, 0.2) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
 		}
 		if (key == GLFW_KEY_LEFT) {
-			camera_trans.x -= 0.2;
+			camera_trans += vec3(0.2, 0, 0) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
 		}
 		if (key == GLFW_KEY_RIGHT) {
-			camera_trans.x += 0.2;
+			camera_trans -= vec3(0.2, 0, 0) * mat3_cast(quat(camera_rot * vec3(-1, 1, 1)));
 		}
 		// Light translation
 		if (key == GLFW_KEY_Q) {
@@ -222,6 +222,9 @@ public:
 		heightShader->addAttribute("vertPos");
 		heightShader->addAttribute("vertNor");
 		heightShader->addAttribute("vertTex");
+		// // camera position and offset
+		// heightShader->addUniform("camoff");
+		// heightShader->addUniform("campos");
 
 
 		// -- TEXTURES ---
@@ -333,35 +336,6 @@ public:
      	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
       	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
       }
-
-    //   //code to draw the ground plane
-    //  void drawGround(shared_ptr<Program> curS, shared_ptr<Texture> texture0) {
-    //  	curS->bind();
-    //  	glBindVertexArray(GroundVertexArrayID);
-    //  	texture0->bind(curS->getUniform("Texture0"));
-	// 	//draw the ground plane
-  	// 	SetModel(vec3(0, -1, 0), 0, 0, 1, curS);
-  	// 	glEnableVertexAttribArray(0);
-  	// 	glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-  	// 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-  	// 	glEnableVertexAttribArray(1);
-  	// 	glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-  	// 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-  	// 	glEnableVertexAttribArray(2);
-  	// 	glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-  	// 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-   	// 	// draw!
-  	// 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-  	// 	glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
-
-  	// 	glDisableVertexAttribArray(0);
-  	// 	glDisableVertexAttribArray(1);
-  	// 	glDisableVertexAttribArray(2);
-  	// 	curS->unbind();
-    //  }
 
      //helper function to pass material data to the GPU
 	void SetMaterial(shared_ptr<Program> curS, int i) {
