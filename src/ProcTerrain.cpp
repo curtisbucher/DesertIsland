@@ -72,15 +72,6 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const char* texture_fil
             tex[x * 4 + y*this->mesh_size * 4 + 3] = glm::vec2(0.0, t)+ glm::vec2(x, y)*t;
         }
 
-    for(int i = 0; i < points_w; i++) {
-        for(int j = 0; j < points_h; j++) {
-            // // normal
-            GrndNorm[i * points_h + j] = 0;
-            GrndNorm[i * points_h + j + 1] = 1;
-            GrndNorm[i * points_h + j + 2] = 0;
-        }
-    }
-
     // elements
     GLushort elements[MESH_SIZE * MESH_SIZE * 6];
     int ind = 0;
@@ -101,10 +92,6 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const char* texture_fil
     glGenBuffers(1, &GrndBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
     glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * this->mesh_size * this->mesh_size * 4, vertices, GL_DYNAMIC_DRAW);
-
-    glGenBuffers(1, &GrndNorBuffObj);
-    glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GrndNorm), GrndNorm, GL_STATIC_DRAW);
 
     glGenBuffers(1, &GrndTexBuffObj);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
@@ -142,13 +129,13 @@ void ProcTerrain::draw(glm::vec3 camera_pos){
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    // glEnableVertexAttribArray(1);
+    // glBindBuffer(GL_ARRAY_BUFFER, GrndNorBuffObj);
+    // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
-    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     // draw!
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
@@ -156,8 +143,14 @@ void ProcTerrain::draw(glm::vec3 camera_pos){
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(2);
+    // glDisableVertexAttribArray(2);
     this->shader->unbind();
+}
+
+// Draw a plane, for the waterline
+void ProcTerrain::drawPlane() {
+    // TODO: implement
+    return;
 }
 
 /* helper function to set model trasnforms */
