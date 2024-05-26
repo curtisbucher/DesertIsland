@@ -33,6 +33,56 @@ using namespace glm;
 // the duration of a day in seconds
 #define DAY_DURATION_S (1 * 60)
 
+double get_last_elapsed_time()
+{
+	static double lasttime = glfwGetTime();
+	double actualtime =glfwGetTime();
+	double difference = actualtime- lasttime;
+	lasttime = actualtime;
+	return difference;
+}
+
+class camera
+{
+public:
+	glm::vec3 pos;
+	float rotAngle;
+	int w, a, s, d;
+	camera()
+	{
+		w = a = s = d = 0;
+		rotAngle = 0.0;
+		pos = glm::vec3(0, 0, 0);
+	}
+	glm::mat4 process(double ftime)
+	{
+		float speed = 0;
+		if (w == 1)
+		{
+			speed = 10*ftime;
+		}
+		else if (s == 1)
+		{
+			speed = -10*ftime;
+		}
+		float yangle=0;
+		if (a == 1)
+			yangle = -3*ftime;
+		else if(d==1)
+			yangle = 3*ftime;
+
+		rotAngle += yangle;
+		glm::mat4 R = glm::rotate(glm::mat4(1), rotAngle, glm::vec3(0, 1, 0));
+		glm::vec4 dir = glm::vec4(0, 0, speed,1);
+		dir = dir*R;
+		pos += glm::vec3(dir.x, dir.y, dir.z);
+		glm::mat4 T = glm::translate(glm::mat4(1), pos);
+		return R*T;
+	}
+};
+
+camera mycam;
+
 class Application : public EventCallbacks
 {
 
@@ -76,44 +126,50 @@ public:
 	float eTheta = 0;
 	float hTheta = 0;
 
+	void scrollCallback(GLFWwindow * window, double in_deltaX, double in_deltaY){
+		// TODO: implement
+	}
+
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		{
 			glfwSetWindowShouldClose(window, GL_TRUE);
 		}
-		// Rotation
-		if (key == GLFW_KEY_A) {
-			camera_rot.y -= CAMERA_ROT_SPEED;
+
+		if (key == GLFW_KEY_W && action == GLFW_PRESS)
+		{
+			mycam.w = 1;
 		}
-		if (key == GLFW_KEY_D) {
-			camera_rot.y += CAMERA_ROT_SPEED;
+		if (key == GLFW_KEY_W && action == GLFW_RELEASE)
+		{
+			mycam.w = 0;
 		}
-		if (key == GLFW_KEY_W) {
-			camera_rot.x -= CAMERA_ROT_SPEED;
+		if (key == GLFW_KEY_S && action == GLFW_PRESS)
+		{
+			mycam.s = 1;
 		}
-		if (key == GLFW_KEY_S) {
-			camera_rot.x += CAMERA_ROT_SPEED;
+		if (key == GLFW_KEY_S && action == GLFW_RELEASE)
+		{
+			mycam.s = 0;
 		}
-		if (key == GLFW_KEY_Z) {
-			camera_trans.z -= CAMERA_ROT_SPEED;
+		if (key == GLFW_KEY_A && action == GLFW_PRESS)
+		{
+			mycam.a = 1;
 		}
-		if (key == GLFW_KEY_X) {
-			camera_trans.z += CAMERA_ROT_SPEED;
+		if (key == GLFW_KEY_A && action == GLFW_RELEASE)
+		{
+			mycam.a = 0;
 		}
-		// Translation
-		if (key == GLFW_KEY_UP) {
-			camera_trans += vec3(0, 0, CAMERA_SPEED) * mat3_cast(quat(camera_rot));
+		if (key == GLFW_KEY_D && action == GLFW_PRESS)
+		{
+			mycam.d = 1;
 		}
-		if (key == GLFW_KEY_DOWN) {
-			camera_trans -= vec3(0, 0, CAMERA_SPEED) * mat3_cast(quat(camera_rot));
+		if (key == GLFW_KEY_D && action == GLFW_RELEASE)
+		{
+			mycam.d = 0;
 		}
-		if (key == GLFW_KEY_LEFT) {
-			camera_trans += vec3(CAMERA_SPEED, 0, 0) * mat3_cast(quat(camera_rot));
-		}
-		if (key == GLFW_KEY_RIGHT) {
-			camera_trans -= vec3(CAMERA_SPEED, 0, 0) * mat3_cast(quat(camera_rot));
-		}
+
 		// Light translation
 		if (key == GLFW_KEY_Q) {
 			light_trans.x -= 0.5;
@@ -450,6 +506,8 @@ public:
 	}
 
 	void render() {
+		double frametime = get_last_elapsed_time();
+
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
@@ -463,7 +521,8 @@ public:
 
 		// Create the matrix stacks - please leave these alone for now
 		auto Projection = make_shared<MatrixStack>();
-		auto View = make_shared<MatrixStack>();
+		//auto View = make_shared<MatrixStack>();
+		mat4 View = mycam.process(frametime);
 		auto Model = make_shared<MatrixStack>();
 
 		// Apply perspective projection.
@@ -471,18 +530,19 @@ public:
 		Projection->perspective(45.0f, aspect, 0.01f, 100.0f);
 
 		// View is global translation along negative z for now
+		/*
 		View->pushMatrix();
 			View->loadIdentity();
 			View->rotate(camera_rot.x, vec3(1,0,0));
 			View->rotate(camera_rot.y, vec3(0,1,0));
 			View->rotate(camera_rot.z, vec3(0,0,1));
 			View->translate(camera_trans);
-
+		*/
 		/*
 		// --- Draw Solid Colored Items ---
 		prog->bind();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View));
 
 		glUniform1i(prog->getUniform("flip"), 0);
 		glUniform3f(prog->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
@@ -524,7 +584,7 @@ public:
 		// Initialize Prog
 		prog->bind();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View));
 
 		glUniform1i(prog->getUniform("flip"), 0);
 		glUniform3f(prog->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
@@ -533,7 +593,7 @@ public:
 		// Initialize texProg
 		texProg->bind();
 		glUniformMatrix4fv(texProg->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(texProg->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(texProg->getUniform("V"), 1, GL_FALSE, value_ptr(View));
 		glUniformMatrix4fv(texProg->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
 
 		glUniform3f(texProg->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
@@ -545,7 +605,7 @@ public:
 		// Height Shader
 		heightShader->bind();
 		glUniformMatrix4fv(heightShader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(heightShader->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(heightShader->getUniform("V"), 1, GL_FALSE, value_ptr(View));
 		glUniformMatrix4fv(heightShader->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
 
 		glUniform3f(heightShader->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
@@ -557,7 +617,7 @@ public:
 		// Height Shader
 		water_shader->bind();
 		glUniformMatrix4fv(water_shader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(water_shader->getUniform("V"), 1, GL_FALSE, value_ptr(View->topMatrix()));
+		glUniformMatrix4fv(water_shader->getUniform("V"), 1, GL_FALSE, value_ptr(View));
 		glUniformMatrix4fv(water_shader->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
 
 		glUniform3f(water_shader->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
@@ -570,7 +630,7 @@ public:
 		skysphere_shader->bind();
 		// strip the camera translation from the view matrix for the skybox, so it stays put
 		// https://learnopengl.com/Advanced-OpenGL/Cubemaps
-		glm::mat4 ViewBox = glm::mat4(glm::mat3(View->topMatrix()));
+		glm::mat4 ViewBox = glm::mat4(glm::mat3(View));
 		// pass modified view and projection matrices
 		glUniformMatrix4fv(skysphere_shader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
 		glUniformMatrix4fv(skysphere_shader->getUniform("V"), 1, GL_FALSE, value_ptr(ViewBox));
@@ -608,7 +668,6 @@ public:
 
 		// Pop matrix stacks.
 		Projection->popMatrix();
-		View->popMatrix();
 	}
 };
 
