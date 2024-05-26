@@ -353,7 +353,6 @@ public:
 		water_shader->addUniform("tex_zoom");
 
 
-
 		// -- TEXTURES ---
 		// TODO, make ground texture subclass of texture
 		textureDaySky = make_shared<Texture>();
@@ -676,8 +675,8 @@ public:
 		tree1->draw();
 
 		// draw the ground
-		ground.draw( camera_trans);
-		ground.drawPlane(water_shader, water_texture, camera_trans);
+		ground.draw(-mycam.pos);
+		ground.drawPlane(water_shader, water_texture, -mycam.pos);
 
 		//animation update example
 		sTheta = sin(glfwGetTime() * 1 / DAY_DURATION_S);
