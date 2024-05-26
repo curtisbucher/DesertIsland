@@ -42,42 +42,58 @@ double get_last_elapsed_time()
 	return difference;
 }
 
+#define MAX_PITCH (89.0)
 class camera
 {
 public:
 	glm::vec3 pos;
 	float rotAngle;
+	float pitch, yaw;
 	int w, a, s, d;
+
 	camera()
 	{
 		w = a = s = d = 0;
 		rotAngle = 0.0;
+		pitch = 0.0;
+		yaw = 0.0;
 		pos = glm::vec3(0, 0, 0);
 	}
 	glm::mat4 process(double ftime)
 	{
-		float speed = 0;
+		float f_speed = 0;
 		if (w == 1)
-		{
-			speed = 10*ftime;
-		}
+			f_speed = 10*ftime;
 		else if (s == 1)
-		{
-			speed = -10*ftime;
-		}
-		float yangle=0;
-		if (a == 1)
-			yangle = -3*ftime;
-		else if(d==1)
-			yangle = 3*ftime;
+			f_speed = -10*ftime;
 
-		rotAngle += yangle;
-		glm::mat4 R = glm::rotate(glm::mat4(1), rotAngle, glm::vec3(0, 1, 0));
+		float r_speed=0;
+		if (a == 1)
+			r_speed = -3*ftime;
+		else if(d==1)
+			r_speed = 3*ftime;
+
+		// rotAngle += yangle;s
+		/*glm::mat4 R1 = glm::rotate(glm::mat4(1), pitch, glm::vec3(1, 0, 0));
+		glm::mat4 R2 = glm::rotate(glm::mat4(1), rotAngle, glm::vec3(0, 1, 0));
 		glm::vec4 dir = glm::vec4(0, 0, speed,1);
-		dir = dir*R;
+		dir = dir*R2*R1;
 		pos += glm::vec3(dir.x, dir.y, dir.z);
 		glm::mat4 T = glm::translate(glm::mat4(1), pos);
-		return R*T;
+		return R1*R2*T;*/
+		//REPLACED BY FOLLOWING CODE ... V
+		vec3 front;
+		front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+		front.y = sin(glm::radians(pitch));
+		front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+		vec3 right = normalize(cross(front, vec3(0, 1, 0)));
+		vec3 up = normalize(cross(right, front));
+
+		pos += f_speed * front;
+		pos += r_speed * right;
+
+		return glm::lookAt(pos, pos + front, up);
 	}
 };
 
@@ -128,6 +144,8 @@ public:
 
 	void scrollCallback(GLFWwindow * window, double in_deltaX, double in_deltaY){
 		// TODO: implement
+		mycam.pitch = clamp(mycam.pitch - (in_deltaY * 10), -MAX_PITCH, MAX_PITCH);
+		mycam.yaw += in_deltaX * 10;
 	}
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
