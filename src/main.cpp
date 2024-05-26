@@ -42,21 +42,21 @@ double get_last_elapsed_time()
 	return difference;
 }
 
-#define MAX_PITCH (89.0)
+#define MAX_PHI (80.0)
 class camera
 {
 public:
 	glm::vec3 pos;
 	float rotAngle;
-	float pitch, yaw;
+	float phi, theta;
 	int w, a, s, d;
 
 	camera()
 	{
 		w = a = s = d = 0;
 		rotAngle = 0.0;
-		pitch = 0.0;
-		yaw = 0.0;
+		phi = 0.0;
+		theta = 0.0;
 		pos = glm::vec3(0, 0, 0);
 	}
 	glm::mat4 process(double ftime)
@@ -83,9 +83,9 @@ public:
 		return R1*R2*T;*/
 		//REPLACED BY FOLLOWING CODE ... V
 		vec3 front;
-		front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-		front.y = sin(glm::radians(pitch));
-		front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+		front.x = cos(glm::radians(theta)) * cos(glm::radians(phi));
+		front.y = -1 * sin(glm::radians(phi));
+		front.z = sin(glm::radians(theta)) * cos(glm::radians(phi));
 
 		vec3 right = normalize(cross(front, vec3(0, 1, 0)));
 		vec3 up = normalize(cross(right, front));
@@ -144,8 +144,8 @@ public:
 
 	void scrollCallback(GLFWwindow * window, double in_deltaX, double in_deltaY){
 		// TODO: implement
-		mycam.pitch = clamp(mycam.pitch - (in_deltaY * 10), -MAX_PITCH, MAX_PITCH);
-		mycam.yaw += in_deltaX * 10;
+		mycam.phi = clamp(mycam.phi + (in_deltaY * 10), -MAX_PHI, MAX_PHI);
+		mycam.theta = mycam.theta + (in_deltaX * 10);
 	}
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
