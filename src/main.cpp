@@ -133,9 +133,8 @@ public:
 	vec3 light_trans=vec3(-2, 2, 2);
 	vec3 light_color=vec3(1, 1, 1);
 	int vec_toggle = 0;
-	float ambient_intensity = 0.4;
-	float shine_intensity = 0.6;
-;
+	float ambient_intensity = 0.6;
+	float shine_intensity = 0.7;
 	//animation data
 	float gTrans = -3;
 	float sTheta = 0;
