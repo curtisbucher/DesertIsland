@@ -14,6 +14,8 @@
 #include "WindowManager.h"
 #include "Texture.h"
 #include "ProcTerrain.h"
+#include "Bezier.h"
+#include "Spline.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader/tiny_obj_loader.h>
@@ -47,9 +49,13 @@ class camera
 {
 public:
 	glm::vec3 pos;
+	glm::vec3 auto_movement_pos;
 	float rotAngle;
 	float phi, theta;
 	int w, a, s, d;
+
+	Spline splinepath[2];
+	bool auto_movement = false;
 
 	camera()
 	{
@@ -58,42 +64,60 @@ public:
 		phi = 0.0;
 		theta = 0.0;
 		pos = glm::vec3(0, 0, 0);
+		auto_movement_pos = glm::vec3(0, 0, 0);
+
+		bool auto_movement = false;
 	}
 	glm::mat4 process(double ftime)
 	{
-		float f_speed = 0;
-		if (w == 1)
-			f_speed = 10*ftime;
-		else if (s == 1)
-			f_speed = -10*ftime;
+		// follow the preprogrammed camera path
+		if (this->auto_movement) {
+			// first spline
+			if(!this->splinepath[0].isDone()){
+				this->splinepath[0].update(ftime);
+				this->auto_movement_pos = this->pos + this->splinepath[0].getPosition();
+			// second spline
+			} else if(!this->splinepath[1].isDone()) {
+				this->splinepath[1].update(ftime);
+				this->auto_movement_pos = this->pos + this->splinepath[1].getPosition();
+			// back to mouse control
+			} else {
+				this->auto_movement = false;
+				this->pos = this->auto_movement_pos;
+			}
 
-		float r_speed=0;
-		if (a == 1)
-			r_speed = -3*ftime;
-		else if(d==1)
-			r_speed = 3*ftime;
+			return glm::lookAt(this->auto_movement_pos, pos, vec3(0, 1, 0));
+		}
+		// follow mouse and key input
+		else{
+			// reletive camera rotation
+			vec3 front;
+			front.x = cos(glm::radians(theta)) * cos(glm::radians(phi));
+			front.y = -1 * sin(glm::radians(phi));
+			front.z = sin(glm::radians(theta)) * cos(glm::radians(phi));
 
-		// rotAngle += yangle;s
-		/*glm::mat4 R1 = glm::rotate(glm::mat4(1), pitch, glm::vec3(1, 0, 0));
-		glm::mat4 R2 = glm::rotate(glm::mat4(1), rotAngle, glm::vec3(0, 1, 0));
-		glm::vec4 dir = glm::vec4(0, 0, speed,1);
-		dir = dir*R2*R1;
-		pos += glm::vec3(dir.x, dir.y, dir.z);
-		glm::mat4 T = glm::translate(glm::mat4(1), pos);
-		return R1*R2*T;*/
-		//REPLACED BY FOLLOWING CODE ... V
-		vec3 front;
-		front.x = cos(glm::radians(theta)) * cos(glm::radians(phi));
-		front.y = -1 * sin(glm::radians(phi));
-		front.z = sin(glm::radians(theta)) * cos(glm::radians(phi));
+			vec3 right = normalize(cross(front, vec3(0, 1, 0)));
+			vec3 up = normalize(cross(right, front));
 
-		vec3 right = normalize(cross(front, vec3(0, 1, 0)));
-		vec3 up = normalize(cross(right, front));
+			float f_speed = 0;
+			if (w == 1)
+				f_speed = 10*ftime;
+			else if (s == 1)
+				f_speed = -10*ftime;
 
-		pos += f_speed * front;
-		pos += r_speed * right;
+			float r_speed=0;
+			if (a == 1)
+				r_speed = -3*ftime;
+			else if(d==1)
+				r_speed = 3*ftime;
 
-		return glm::lookAt(pos, pos + front, up);
+			pos += f_speed * front;
+			pos += r_speed * right;
+			auto_movement_pos = pos;
+
+			return glm::lookAt(pos, pos + front, up);
+		}
+
 	}
 };
 
@@ -140,6 +164,10 @@ public:
 	float sTheta = 0;
 	float eTheta = 0;
 	float hTheta = 0;
+	//camera
+	double g_phi, g_theta;
+	vec3 view = vec3(0, 0, 1);
+	vec3 strafe = vec3(1, 0, 0);
 
 	void scrollCallback(GLFWwindow * window, double in_deltaX, double in_deltaY){
 		// TODO: implement
@@ -204,6 +232,10 @@ public:
 		// Toggle Material on 'm'
 		if (key == GLFW_KEY_M && action == GLFW_PRESS) {
 			vec_toggle = (vec_toggle + 1) % 6;
+		}
+		// Do cinematic movement
+		if (key == GLFW_KEY_G && action == GLFW_RELEASE) {
+			mycam.auto_movement = !mycam.auto_movement;
 		}
 
 	}
@@ -394,6 +426,9 @@ public:
 		tree1_texture->setUnit(1);
 		tree1_texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
+  		// init splines up and down
+		mycam.splinepath[0] = Spline(glm::vec3(-6,0,5), glm::vec3(-1,-5,5), glm::vec3(1, 5, 5), glm::vec3(2,0,5), 5);
+		mycam.splinepath[1] = Spline(glm::vec3(2,0,5), glm::vec3(3,-2,5), glm::vec3(-0.25, 0.25, 5), glm::vec3(0,0,5), 5);
 	}
 
 	void initGeom(const std::string& resourceDirectory)
