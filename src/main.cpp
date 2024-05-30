@@ -375,34 +375,12 @@ public:
   		water_texture->setUnit(0);
   		water_texture->setWrapModes(GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT);
 
-		// load in sand texture
-		sand_texture = make_shared<Texture>();
-		sand_texture->setFilename(resourceDirectory + "/sand.jpg");
-		sand_texture->init();
-		sand_texture->setUnit(1);
-		sand_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
-
-		// load in grass and texture
-		grass_texture = make_shared<Texture>();
-		grass_texture->setFilename(resourceDirectory + "/grass.jpg");
-		grass_texture->init();
-		grass_texture->setUnit(2);
-		grass_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
-
-		// load in rock texture
-		stone_texture = make_shared<Texture>();
-		stone_texture->setFilename(resourceDirectory + "/stone.jpg");
-		stone_texture->init();
-		stone_texture->setUnit(3);
-		stone_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
-
 		// load in tree texture
 		tree1_texture = make_shared<Texture>();
 		tree1_texture->setFilename(resourceDirectory + "/objects/trees/_1_tree.jpg");
 		tree1_texture->init();
 		tree1_texture->setUnit(1);
 		tree1_texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-
 	}
 
 	void initGeom(const std::string& resourceDirectory)

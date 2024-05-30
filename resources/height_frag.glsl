@@ -1,7 +1,7 @@
 #version 330 core
 
-#define TEX1_MIN_HEIGHT (1)
-#define TEX2_MIN_HEIGHT (5)
+#define TEX1_MIN_HEIGHT (2)
+#define TEX2_MIN_HEIGHT (7)
 
 // texture image
 uniform sampler2D Texture0;
@@ -43,15 +43,33 @@ void main() {
 	vec4 texColor;
 
 	// if height is above tex 1 line
-	if(EPos.y + biome_modifier < TEX1_MIN_HEIGHT){
+	// if(EPos.y + biome_modifier < TEX1_MIN_HEIGHT){
+	// 	texColor = texColor0;
+	// }
+	// else if(EPos.y + biome_modifier < TEX2_MIN_HEIGHT){
+	// 	texColor = texColor1;
+	// }
+	// else {
+	// 	texColor = texColor2;
+	// }
+	// normalize the texture based on height
+	float height = EPos.y + biome_modifier;
+	float texHeight = 0;
+	if(height < TEX1_MIN_HEIGHT / 2){
 		texColor = texColor0;
 	}
-	else if(EPos.y + biome_modifier < TEX2_MIN_HEIGHT){
-		texColor = texColor1;
+	if(height < TEX1_MIN_HEIGHT){
+		texHeight = (height) / (TEX1_MIN_HEIGHT);
+		texColor = mix(texColor0, texColor1, texHeight);
+	}
+	else if(height < TEX2_MIN_HEIGHT){
+		texHeight = (height - TEX1_MIN_HEIGHT) / (TEX2_MIN_HEIGHT - TEX1_MIN_HEIGHT);
+		texColor = mix(texColor1, texColor2, texHeight);
 	}
 	else {
 		texColor = texColor2;
 	}
+
 
 	// calculate lighting
 	vec3 normal = normalize(fragNor);

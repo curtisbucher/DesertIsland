@@ -111,7 +111,7 @@ void main() {
 	vTexCoord = vertTex;
 
   // pass biome modifier
-  biome_modifier = 3 * (0.5 - noise(-v1.xzy,
+  biome_modifier = 2 * (0.5 - noise(-v1.xzy,
     8,
     0.2,
     0.1));
