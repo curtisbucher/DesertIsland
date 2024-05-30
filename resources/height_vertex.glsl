@@ -13,9 +13,10 @@ out vec2 vTexCoord;
 
 out vec3 fragNor;
 out vec3 lightDir;
+// the output vertex position
 out vec3 EPos;
-
-
+// a modifier for altitude to make biomes occur at varying levels
+out float biome_modifier;
 
 // Default values
 #define PARAM_HEIGHT_OCTAVES (8)
@@ -108,4 +109,10 @@ void main() {
   EPos = tpos.xyz;
 	gl_Position = P * V * tpos;
 	vTexCoord = vertTex;
+
+  // pass biome modifier
+  biome_modifier = 3 * (0.5 - noise(-v1.xzy,
+    8,
+    0.2,
+    0.1));
 }

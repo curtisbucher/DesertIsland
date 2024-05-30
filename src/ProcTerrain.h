@@ -23,7 +23,7 @@ class ProcTerrain {
     public:
         ProcTerrain();
         virtual ~ProcTerrain();
-        void init(const shared_ptr<Program> shader, const char* texture_filename);
+        void init(const shared_ptr<Program> shader, const vector<std::string>texture_filenames);
         void draw(glm::vec3 camera_pos);
         void drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos);
     private:
@@ -39,7 +39,7 @@ class ProcTerrain {
         int mesh_size;
         // shader
         std::shared_ptr<Program> shader;
-        std::shared_ptr<Texture> texture;
+        std::vector<std::shared_ptr<Texture>> textures;
 };
 
 void SetModel(glm::vec3 trans, float rotY, float rotX, float sc, std::shared_ptr<Program> curS);

@@ -123,7 +123,7 @@ public:
 	GLuint GroundVertexArrayID;
 
 	//the image to use as a texture (ground)
-	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture, grass_texture, textureDaySky, textureNightSky;
+	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture, grass_texture, stone_texture, textureDaySky, textureNightSky;
 	shared_ptr<Texture> tree1_texture;
 
 	//global data (larger program should be encapsulated)
@@ -296,6 +296,8 @@ public:
 		heightShader->addUniform("shineIntensity");
 		heightShader->addUniform("flip");
 		heightShader->addUniform("Texture0");
+		heightShader->addUniform("Texture1");
+		heightShader->addUniform("Texture2");
 		heightShader->addUniform("lightPos");
 		heightShader->addAttribute("vertPos");
 		heightShader->addAttribute("vertNor");
@@ -351,7 +353,6 @@ public:
 		// texture zoom
 		water_shader->addUniform("tex_zoom");
 
-
 		// -- TEXTURES ---
 		// TODO, make ground texture subclass of texture
 		textureDaySky = make_shared<Texture>();
@@ -366,6 +367,7 @@ public:
   		textureNightSky->setUnit(3);
   		textureNightSky->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
+		/* --- Terrain Textures --- */
 		//read in a load the texture
 		water_texture = make_shared<Texture>();
   		water_texture->setFilename(resourceDirectory + "/water.jpeg");
@@ -377,15 +379,22 @@ public:
 		sand_texture = make_shared<Texture>();
 		sand_texture->setFilename(resourceDirectory + "/sand.jpg");
 		sand_texture->init();
-		sand_texture->setUnit(0);
+		sand_texture->setUnit(1);
 		sand_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
 
 		// load in grass and texture
 		grass_texture = make_shared<Texture>();
 		grass_texture->setFilename(resourceDirectory + "/grass.jpg");
 		grass_texture->init();
-		grass_texture->setUnit(0);
+		grass_texture->setUnit(2);
 		grass_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
+
+		// load in rock texture
+		stone_texture = make_shared<Texture>();
+		stone_texture->setFilename(resourceDirectory + "/stone.jpg");
+		stone_texture->init();
+		stone_texture->setUnit(3);
+		stone_texture->setWrapModes(GL_REPEAT, GL_REPEAT);
 
 		// load in tree texture
 		tree1_texture = make_shared<Texture>();
@@ -418,7 +427,12 @@ public:
 		}
 
 		//code to load in the ground plane (CPU defined data passed to GPU)
-		ground.init(heightShader, (resourceDirectory + "/grass.jpg").c_str());
+		std::vector<std::string> tex_filenames = {
+			(resourceDirectory + "/sand.jpg").c_str(),
+			(resourceDirectory + "/grass.jpg").c_str(),
+			(resourceDirectory + "/stone.jpg").c_str()
+		};
+		ground.init(heightShader, tex_filenames);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

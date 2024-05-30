@@ -12,8 +12,8 @@ ProcTerrain::ProcTerrain() :
     tex_zoom(DEFAULT_TEX_ZOOM),
     mesh_size(DEFAULT_MESH_SIZE),
 
-    shader(nullptr),
-    texture(nullptr)
+    shader(nullptr)
+    // texture(std::vector<std::shared_pointer<Texture>>)
 {
 }
 
@@ -23,16 +23,19 @@ ProcTerrain::~ProcTerrain()
 }
 
 #define MESH_SIZE 100
-void ProcTerrain::init(const shared_ptr<Program> shader, const char* texture_filename)
+void ProcTerrain::init(const shared_ptr<Program> shader, const vector<std::string> texture_filenames)
 {
     // store the shader
     this->shader = shader;
-    // load the texture
-    this->texture = make_shared<Texture>();
-    this->texture->setFilename(texture_filename);
-    this->texture->init();
-    this->texture->setUnit(0);
-    this->texture->setWrapModes(GL_REPEAT, GL_REPEAT);
+    // load the textures
+    int i = 0;
+    for(auto t_fname : texture_filenames){
+        this->textures.push_back(make_shared<Texture>());
+        this->textures.back()->setFilename(t_fname);
+        this->textures.back()->init();
+        this->textures.back()->setUnit(i++);
+        this->textures.back()->setWrapModes(GL_REPEAT, GL_REPEAT);
+    }
 
     // the dimensions of the grid (in points)
     int points_w = 20;
@@ -106,7 +109,9 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const char* texture_fil
 void ProcTerrain::draw(glm::vec3 camera_pos){
     this->shader->bind();
     glBindVertexArray(GroundVertexArrayID);
-    this->texture->bind(this->shader->getUniform("Texture0"));
+    this->textures.at(0)->bind(this->shader->getUniform("Texture0"));
+    this->textures.at(1)->bind(this->shader->getUniform("Texture1"));
+    this->textures.at(2)->bind(this->shader->getUniform("Texture2"));
 
     // center the ground plane
     SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, this->shader);

@@ -1,7 +1,12 @@
 #version 330 core
 
+#define TEX1_MIN_HEIGHT (1)
+#define TEX2_MIN_HEIGHT (5)
+
 // texture image
 uniform sampler2D Texture0;
+uniform sampler2D Texture1;
+uniform sampler2D Texture2;
 
 // color and normal of the fragment
 uniform int flip;
@@ -16,6 +21,7 @@ out vec4 color;
 in vec3 fragNor;
 in vec3 lightDir;
 in vec3 EPos;
+in float biome_modifier;
 
 //camera offset
 uniform vec3 camoff;
@@ -30,8 +36,22 @@ void main() {
 	float t=1. / tex_zoom;
 	texcoords -= vec2(camoff.x,camoff.z)*t;
 
-	// get texture color
+	// get texture colors
 	vec4 texColor0 = texture(Texture0, texcoords);
+	vec4 texColor1 = texture(Texture1, texcoords);
+	vec4 texColor2 = texture(Texture2, texcoords);
+	vec4 texColor;
+
+	// if height is above tex 1 line
+	if(EPos.y + biome_modifier < TEX1_MIN_HEIGHT){
+		texColor = texColor0;
+	}
+	else if(EPos.y + biome_modifier < TEX2_MIN_HEIGHT){
+		texColor = texColor1;
+	}
+	else {
+		texColor = texColor2;
+	}
 
 	// calculate lighting
 	vec3 normal = normalize(fragNor);
@@ -47,8 +67,9 @@ void main() {
 	vec3 ambientLight = lightColor * ambientIntensity;
 	vec3 diffuseLight = lightColor * dC;
 	vec3 specularLight = lightColor * sC;
+
 	// combine all components
-	color = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texColor0;
+	color = vec4(ambientLight + diffuseLight + specularLight, 1.0) * texColor;
 
 	// fade out
 	float len = length(EPos.xz+campos.xz);
