@@ -22,7 +22,7 @@ ProcTerrain::~ProcTerrain()
 {
 }
 
-#define MESH_SIZE 100
+
 void ProcTerrain::init(const shared_ptr<Program> shader, const vector<std::string> texture_filenames)
 {
     // store the shader
@@ -186,6 +186,14 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<T
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
     shader->unbind();
+}
+
+/* get the height at an xy position */
+float ProcTerrain::get_altitude(glm::vec3 pos, glm::vec3 camera_pos){
+    // get reletive position from camera
+    glm::vec3 rel_pos = pos - camera_pos;
+    // get the height at the position
+    return get_height(rel_pos);
 }
 
 /* helper function to set model trasnforms */

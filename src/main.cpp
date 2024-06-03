@@ -112,6 +112,7 @@ public:
 	//our geometry
 	shared_ptr<MultiShape> tree1;
 	shared_ptr<SkySphere> skysphere;
+	shared_ptr<Shape> mesh;
 
 	// Terrain Generation
 	ProcTerrain ground;
@@ -393,15 +394,36 @@ public:
 		// trees
 		tree1 = make_shared<MultiShape>(false, texProg, (objectDir + "/trees/_1_tree.jpg").c_str());
 		bool rc = tree1->loadObjFromFile(errStr, (objectDir + "/trees/tree1.obj").c_str());
-
-		// skysphere
-		skysphere = make_shared<SkySphere>(skysphere_shader, (resourceDirectory + "/skysphere/sphere-night.jpeg").c_str(), (resourceDirectory + "/skysphere/sphere-day.jpg").c_str());
-		rc = skysphere->loadObjFromFile(errStr, (resourceDirectory + "/skysphere/sphereWTex.obj").c_str());
-
 		// error handling
 		if (!rc) {
 			cerr << errStr << endl;
 			exit(-1);
+		}
+
+		// skysphere
+		skysphere = make_shared<SkySphere>(skysphere_shader, (resourceDirectory + "/skysphere/sphere-night.jpeg").c_str(), (resourceDirectory + "/skysphere/sphere-day.jpg").c_str());
+		rc = skysphere->loadObjFromFile(errStr, (resourceDirectory + "/skysphere/sphereWTex.obj").c_str());
+		// error handling
+		if (!rc) {
+			cerr << errStr << endl;
+			exit(-1);
+		}
+
+		// hierarchical model
+ 		vector<tinyobj::shape_t> TOshapes;
+ 		vector<tinyobj::material_t> objMaterials;
+ 		// string errStr;
+		//load in the mesh and make the shape(s)
+ 		rc = tinyobj::LoadObj(TOshapes, objMaterials, errStr, (objectDir + "/testing/SmoothSphere.obj").c_str());
+
+		if (!rc) {
+			cerr << errStr << endl;
+		} else {
+			//for now all our shapes will not have textures - change in later labs
+			mesh = make_shared<Shape>();
+			mesh->createShape(TOshapes[0]);
+			mesh->measure();
+			mesh->init();
 		}
 
 		//code to load in the ground plane (CPU defined data passed to GPU)
@@ -511,6 +533,165 @@ public:
 				glUniform1f(curS->getUniform("MatShine"), 10.0);
 			break;
   		}
+	}
+
+	void setModel(std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack>M) {
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
+   	}
+
+	void draw_HM(std::shared_ptr<MatrixStack> Model, shared_ptr<Program> prog, shared_ptr<Texture> texture) {
+		#define TORSO_SIZE	vec3(1.25, 1.35, 1.25)
+		#define TORSO_POS 	vec3(0, 0, 0)
+
+		#define HEAD_SIZE 	vec3(0.5, 0.5, 0.5)
+		#define HEAD_POS 	vec3(0, 1.4, 0)
+
+		#define BICEP_SIZE 	vec3(0.4, 0.25, 0.25)
+		#define FORARM_SIZE vec3(0.6, 0.25, 0.25)
+		#define HAND_SIZE 	vec3(0.3, 0.25, 0.25)
+
+		#define RIGHT_SHOULDER_POS vec3(0.8, 0.8, 0)
+		#define LEFT_SHOULDER_POS vec3(-0.8, 0.8, 0)
+
+		// Draw a heirarchical model
+		//animation update example
+		float sTheta = sin(glfwGetTime());
+		float sTheta_2 = sin(glfwGetTime() * 2);
+		float right_bicep_angle, right_forearm_angle, right_hand_angle;
+
+		right_bicep_angle = sTheta *0.25;
+		right_forearm_angle = sTheta_2 * 0.5 + (1.5 - right_bicep_angle);
+		right_hand_angle = (sTheta_2 * 0.5) + (0.5 * -right_forearm_angle + 1);//(sTheta_2 * 0.5) + right_forearm_angle;
+
+		float left_bicep_angle, left_forearm_angle, left_hand_angle;
+		left_bicep_angle = 0.5 + (sTheta * 0.05);
+		left_forearm_angle = 1 + (sTheta * 0.05);
+		left_hand_angle = 0 + (sTheta * 0.05);
+
+		prog->bind();
+
+		// draw mesh
+		Model->pushMatrix();
+			Model->loadIdentity();
+			Model->translate(vec3(gTrans, 2, 0));
+			/* draw top sphere - aka head */
+			Model->pushMatrix();
+				Model->translate(HEAD_POS);
+				Model->scale(HEAD_SIZE);
+				setModel(prog, Model);
+				mesh->draw(prog);
+				// mesh->draw();
+			Model->popMatrix();
+
+			// TORSO
+			Model->pushMatrix();
+				Model->translate(TORSO_POS);
+			  	Model->scale(TORSO_SIZE);
+			  	setModel(prog, Model);
+			  	mesh->draw(prog);
+				// mesh->draw();
+			Model->popMatrix();
+
+			// LEFT ARM - BICEP
+			Model->pushMatrix();
+				//place at shoulder
+				Model->translate(LEFT_SHOULDER_POS);
+				//rotate shoulder joint
+				Model->rotate(left_bicep_angle, vec3(0, 0, 1));
+				//move to shoulder joint
+				Model->translate(vec3(-BICEP_SIZE.x, 0, 0));
+
+			    // FOREARM
+			  	Model->pushMatrix();
+					// place at elbow
+					Model->translate(vec3(-BICEP_SIZE.x, 0, 0));
+					// rotate elbow joint
+					Model->rotate(left_forearm_angle, vec3(0, 0, 1));
+					// move to elbow - releative to rotation
+					Model->translate(vec3(-FORARM_SIZE.x, 0, 0));
+
+					// Hand
+					Model->pushMatrix();
+						// place at wrist
+						Model->translate(vec3(-FORARM_SIZE.x, 0, 0));
+						// rotate wrist joint
+						Model->rotate(left_hand_angle, vec3(0, 0, 1));
+						// move to wrist - releative to rotation
+						Model->translate(vec3(-HAND_SIZE.x, 0, 0));
+
+
+						// Do scale only to forearm
+						Model->scale(HAND_SIZE);
+						setModel(prog, Model);
+						mesh->draw(prog);
+						// mesh->draw();
+					Model->popMatrix();
+
+					// Do scale only to forearm
+			      	Model->scale(FORARM_SIZE);
+					setModel(prog, Model);
+					mesh->draw(prog);
+					// mesh->draw();
+			  	Model->popMatrix();
+
+			// BICEP
+			Model->scale(BICEP_SIZE);
+			setModel(prog, Model);
+			mesh->draw(prog);
+			// mesh->draw();
+			Model->popMatrix();
+
+			// RIGHT ARM - BICEP
+			Model->pushMatrix();
+				//place at shoulder
+				Model->translate(RIGHT_SHOULDER_POS);
+				//rotate shoulder joint
+				Model->rotate(right_bicep_angle, vec3(0, 0, 1));
+				//move to shoulder joint
+				Model->translate(vec3(BICEP_SIZE.x, 0, 0));
+
+			    // FOREARM
+			  	Model->pushMatrix();
+					// place at elbow
+					Model->translate(vec3(BICEP_SIZE.x, 0, 0));
+					// rotate elbow joint
+					Model->rotate(right_forearm_angle, vec3(0, 0, 1));
+					// move to elbow - releative to rotation
+					Model->translate(vec3(FORARM_SIZE.x, 0, 0));
+
+					// Hand
+					Model->pushMatrix();
+						// place at wrist
+						Model->translate(vec3(FORARM_SIZE.x, 0, 0));
+						// rotate wrist joint
+						Model->rotate(right_hand_angle, vec3(0, 0, 1));
+						// move to wrist - releative to rotation
+						Model->translate(vec3(HAND_SIZE.x, 0, 0));
+
+
+						// Do scale only to forearm
+						Model->scale(HAND_SIZE);
+						setModel(prog, Model);
+						mesh->draw(prog);
+						// mesh->draw();
+					Model->popMatrix();
+
+					// Do scale only to forearm
+			      	Model->scale(FORARM_SIZE);
+					setModel(prog, Model);
+					mesh->draw(prog);
+					// mesh->draw();
+			  	Model->popMatrix();
+
+			// BICEP
+			Model->scale(BICEP_SIZE);
+			setModel(prog, Model);
+			mesh->draw(prog);
+			// mesh->draw();
+			Model->popMatrix();
+		Model->popMatrix();
+
+		prog->unbind();
 	}
 
 	void render() {
@@ -658,10 +839,13 @@ public:
 		/* --- */
 
 		// --- Draw Scene ---
+
+		draw_HM(Model, texProg, texture0);
+
 		//draw the palm tree
 		tree1->reset_trans();
 		tree1->center_and_scale();
-		tree1->translate(vec3(0, 0, 0));
+		tree1->translate(vec3(0, ground.get_altitude(vec3(0,0,0), -mycam.pos), 0));
 		tree1->scale(vec3(2));
 		tree1->draw();
 
@@ -676,6 +860,7 @@ public:
 
 		// Pop matrix stacks.
 		Projection->popMatrix();
+
 	}
 };
 

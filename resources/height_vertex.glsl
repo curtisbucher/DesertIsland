@@ -18,6 +18,7 @@ out vec3 EPos;
 // a modifier for altitude to make biomes occur at varying levels
 out float biome_modifier;
 
+/* --- FOR HEIGHT CALCULATIONS, IF CHANGE HERE, CHANGE IN simplex.c --- */
 // Default values
 #define PARAM_HEIGHT_OCTAVES (8)
 #define PARAM_HEIGHT_FREQUENCY (0.02)

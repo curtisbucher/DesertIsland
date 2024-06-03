@@ -9,13 +9,16 @@
 #include <vector>
 #include <iostream>
 #include "Texture.h"
+#include "noise.h"
 
 #define DEFAULT_TEX_ZOOM (1)
 #define DEFAULT_MESH_SIZE (100)
+#define MESH_SIZE 100
 
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
 
 using namespace std;
 
@@ -26,6 +29,9 @@ class ProcTerrain {
         void init(const shared_ptr<Program> shader, const vector<std::string>texture_filenames);
         void draw(glm::vec3 camera_pos);
         void drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos);
+        /* get the height at an xy position */
+        float get_altitude(glm::vec3 pos, glm::vec3 camera_pos);
+
     private:
         // buffer objects for communicating with the GPU
         GLuint GrndBuffObj;
