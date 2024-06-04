@@ -107,7 +107,7 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program - use this one for Blinn-Phong
-	std::shared_ptr<Program> prog, texProg, heightShader, skysphere_shader, water_shader;
+	std::shared_ptr<Program> prog, texProg, heightShader, heightMapShader, skysphere_shader, water_shader;
 
 	//our geometry
 	shared_ptr<MultiShape> tree1;
@@ -311,6 +311,37 @@ public:
 		// texture zoom
 		heightShader->addUniform("tex_zoom");
 
+		// Initialize the GLSL program that we will use for texture mapping
+		heightMapShader = make_shared<Program>();
+		heightMapShader->setVerbose(true);
+		heightMapShader->setShaderNames(resourceDirectory + "/heightmap_vertex.glsl", resourceDirectory + "/heightmap_frag.glsl");
+		if(!heightMapShader->init()) {
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		heightMapShader->addUniform("P");
+		heightMapShader->addUniform("V");
+		heightMapShader->addUniform("M");
+		// lighting
+		heightMapShader->addUniform("lightColor");
+		heightMapShader->addUniform("ambientIntensity");
+		heightMapShader->addUniform("shineIntensity");
+		heightMapShader->addUniform("flip");
+		heightMapShader->addUniform("Texture0");
+		heightMapShader->addUniform("Texture1");
+		heightMapShader->addUniform("Texture2");
+		heightMapShader->addUniform("lightPos");
+		heightMapShader->addAttribute("vertPos");
+		heightMapShader->addAttribute("vertNor");
+		heightMapShader->addAttribute("vertTex");
+		// camera position and offset
+		heightMapShader->addUniform("camoff");
+		heightMapShader->addUniform("campos");
+		// mesh size
+		heightMapShader->addUniform("mesh_size");
+		// texture zoom
+		heightMapShader->addUniform("tex_zoom");
+
 		skysphere_shader = make_shared<Program>();
 		skysphere_shader->setVerbose(true);
 		skysphere_shader->setShaderNames(resourceDirectory + "/skyvertex.glsl", resourceDirectory + "/skyfrag.glsl");
@@ -324,6 +355,7 @@ public:
 		skysphere_shader->addAttribute("vertPos");
 		skysphere_shader->addAttribute("vertNor");
 		skysphere_shader->addAttribute("vertTex");
+
 
 		// water shader
 		water_shader = make_shared<Program>();
@@ -432,7 +464,7 @@ public:
 			(resourceDirectory + "/grass.jpg").c_str(),
 			(resourceDirectory + "/stone.jpg").c_str()
 		};
-		ground.init(heightShader, tex_filenames);
+		ground.init(heightMapShader, tex_filenames);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -718,57 +750,6 @@ public:
 		Projection->pushMatrix();
 		Projection->perspective(45.0f, aspect, 0.01f, 100.0f);
 
-		// View is global translation along negative z for now
-		/*
-		View->pushMatrix();
-			View->loadIdentity();
-			View->rotate(camera_rot.x, vec3(1,0,0));
-			View->rotate(camera_rot.y, vec3(0,1,0));
-			View->rotate(camera_rot.z, vec3(0,0,1));
-			View->translate(camera_trans);
-		*/
-		/*
-		// --- Draw Solid Colored Items ---
-		prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View));
-
-		glUniform1i(prog->getUniform("flip"), 0);
-		glUniform3f(prog->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
-
-		// draw the array of bunnies
-		float sp = 3.0;
-		float off = -3.5;
-		  for (int i =0; i < 3; i++) {
-		  	for (int j=0; j < 3; j++) {
-				theBunny->reset_trans();
-				theBunny->translate(vec3(off+sp*i, 0, off+sp*j));
-				theBunny->center_and_scale();
-				SetMaterial(prog, (i+j));
-				theBunny->draw(prog);
-			}
-		  }
-
-		//draw the dummy
-		dummy->reset_trans();
-		dummy->center_and_scale();
-		// rotate by pi/2 rad
-		dummy->rotate(-3.14159/2, vec3(1, 0, 0));
-		dummy->translate(vec3(-100, -200, 5));
-		SetMaterial(prog, 4);
-		dummy->draw(prog);
-
-		dummy->reset_trans();
-		dummy->center_and_scale();
-		// rotate by pi/2 rad
-		dummy->rotate(-3.14159/2, vec3(1, 0, 0));
-		dummy->translate(vec3(-200, -100, 5));
-		SetMaterial(prog, 5);
-		dummy->draw(prog);
-
-		prog->unbind();
-		*/
-
 		// --- Initialize Textures ---
 		// Initialize Prog
 		prog->bind();
@@ -803,7 +784,19 @@ public:
 		glUniform1f(heightShader->getUniform("shineIntensity"), shine_intensity);
 		heightShader->unbind();
 
-		// Height Shader
+		// Height Map Shader
+		heightMapShader->bind();
+		glUniformMatrix4fv(heightMapShader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(heightMapShader->getUniform("V"), 1, GL_FALSE, value_ptr(View));
+		glUniformMatrix4fv(heightMapShader->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+
+		glUniform3f(heightMapShader->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
+		glUniform3f(heightMapShader->getUniform("lightColor"), light_color.r, light_color.g, light_color.b);
+		glUniform1f(heightMapShader->getUniform("ambientIntensity"), ambient_intensity);
+		glUniform1f(heightMapShader->getUniform("shineIntensity"), shine_intensity);
+		heightMapShader->unbind();
+
+		// Water Ground LEvel Shader
 		water_shader->bind();
 		glUniformMatrix4fv(water_shader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
 		glUniformMatrix4fv(water_shader->getUniform("V"), 1, GL_FALSE, value_ptr(View));
@@ -839,7 +832,6 @@ public:
 		/* --- */
 
 		// --- Draw Scene ---
-
 		draw_HM(Model, texProg, texture0);
 
 		//draw the palm tree
@@ -849,7 +841,10 @@ public:
 		tree1->scale(vec3(2));
 		tree1->draw();
 
-		// draw the ground
+		// Get current frame buffer size.
+		ground.gen_heightmap(-mycam.pos, heightMapShader);
+
+		/* --- draw the ground --- */
 		ground.draw(-mycam.pos);
 		ground.drawPlane(water_shader, water_texture, -mycam.pos);
 
@@ -860,7 +855,6 @@ public:
 
 		// Pop matrix stacks.
 		Projection->popMatrix();
-
 	}
 };
 

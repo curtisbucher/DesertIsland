@@ -19,6 +19,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "GLTextureWriter.h"
+
 
 using namespace std;
 
@@ -31,8 +33,20 @@ class ProcTerrain {
         void drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos);
         /* get the height at an xy position */
         float get_altitude(glm::vec3 pos, glm::vec3 camera_pos);
+        void gen_heightmap(glm::vec3 camera_pos, const shared_ptr<Program> heightmap_shader);
 
     private:
+        // void gen_heightmap(glm::vec3 camera_pos, const shared_ptr<Program> heightmap_shader, int window_width, int window_height);
+        void initQuad();
+        // heightmap
+        GLuint frameBuf;
+        GLuint texBuf;
+        GLuint depthBuf;
+
+        //geometry for texture render
+	    GLuint quad_VertexArrayID;
+	    GLuint quad_vertexbuffer;
+
         // buffer objects for communicating with the GPU
         GLuint GrndBuffObj;
         GLuint GrndNorBuffObj;
@@ -49,5 +63,6 @@ class ProcTerrain {
 };
 
 void SetModel(glm::vec3 trans, float rotY, float rotX, float sc, std::shared_ptr<Program> curS);
+void createFBO(GLuint &frameBuf, GLuint &texBuf, int width, int height);
 
 #endif
