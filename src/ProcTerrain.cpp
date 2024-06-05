@@ -13,7 +13,6 @@ ProcTerrain::ProcTerrain() :
     mesh_size(DEFAULT_MESH_SIZE),
 
     shader(nullptr)
-    // texture(std::vector<std::shared_pointer<Texture>>)
 {
 }
 
@@ -140,11 +139,25 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const vector<std::strin
 
 // randomely generate terrain
 void ProcTerrain::draw(glm::vec3 camera_pos){
+    // // generate the heightmap
+    // this->gen_heightmap(camera_pos, this->shader);
+
     this->shader->bind();
     glBindVertexArray(GroundVertexArrayID);
     this->textures.at(0)->bind(this->shader->getUniform("Texture0"));
     this->textures.at(1)->bind(this->shader->getUniform("Texture1"));
     this->textures.at(2)->bind(this->shader->getUniform("Texture2"));
+
+    /* --- bind the heightmap texture --- */
+    int unit = 4;
+    // set wrap modes
+    glBindTexture(GL_TEXTURE_2D, this->texBuf);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // bind
+	glActiveTexture(GL_TEXTURE0 + unit);
+	glBindTexture(GL_TEXTURE_2D, this->texBuf);
+	glUniform1i(3, unit);
 
     // center the ground plane
     SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, this->shader);
@@ -172,41 +185,31 @@ void ProcTerrain::draw(glm::vec3 camera_pos){
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
     // // draw!
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-    // glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
+    glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
 
-    // render to screem (framebuff = 0)
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
-    // Render full-screen quad or plane
-    glBindVertexArray(quad_VertexArrayID);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    // // render to screem (framebuff = 0)
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // // glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
+    // // Render full-screen quad or plane
+    // glBindVertexArray(quad_VertexArrayID);
+    // glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    // glDisableVertexAttribArray(0);
+    // glDisableVertexAttribArray(1);
+
+    // unbind heightmap texture
+    glActiveTexture(GL_TEXTURE0 + unit);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
     this->shader->unbind();
 }
 
 /**** geometry set up for a quad *****/
 void ProcTerrain::initQuad() {
-    // //now set up a simple quad for rendering FBO
-    // glGenVertexArrays(1, &quad_VertexArrayID);
-    // glBindVertexArray(quad_VertexArrayID);
+    //now set up a simple quad for rendering FBO
 
-    // static const GLfloat g_quad_vertex_buffer_data[] = {
-    // -100.0f, -100.0f, 0.0f,
-    // 100.0f, -100.0f, 0.0f,
-    // -100.0f,  100.0f, 0.0f,
-    // -100.0f,  100.0f, 0.0f,
-    // 100.0f, -100.0f, 0.0f,
-    // 100.0f,  100.0f, 0.0f,
-    // };
-
-    // glGenBuffers(1, &this->quad_vertexbuffer);
-    // glBindBuffer(GL_ARRAY_BUFFER, this->quad_vertexbuffer);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-    // Vertex data for a fullscreen quad
     float quadVertices[] = {
         // Positions   // TexCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
@@ -243,7 +246,11 @@ void ProcTerrain::initQuad() {
 void ProcTerrain::gen_heightmap(glm::vec3 camera_pos, const shared_ptr<Program> heightmap_shader){
     // Render the height map using the simplex noise shader to the texture attached to the FBO.
     glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuf);
-    glViewport(0, 0, this->mesh_size, this->mesh_size); // Set viewport to the texture size
+    // get the current viewport dimensions
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    // Set the viewport to the size of the texture
+    glViewport(0, 0, this->mesh_size, this->mesh_size);
 
     heightmap_shader->bind();
 
@@ -255,93 +262,30 @@ void ProcTerrain::gen_heightmap(glm::vec3 camera_pos, const shared_ptr<Program> 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // // //set up to render to first FBO stored in array position 1
-    // // glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuf);
-    // // // Clear framebuffer.
-    // // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    static int firsttime = 1;
+    if (firsttime) {
+    assert(GLTextureWriter::WriteImage(this->texBuf,"Texture_output.png"));
+    firsttime = 0;
+    }
 
-    // //set up inTex as my input texture
-    // // glActiveTexture(GL_TEXTURE0);
-    // // glBindTexture(GL_TEXTURE_2D, this->texBuf);
-
-    // //draw the heightmap texture to the FBO
-    // heightmap_shader->bind();
-    // //   glUniform1i(heightmap_shader->getUniform("texBuf"), 0);
-    // //   glUniform2f(heightmap_shader->getUniform("windowSize"), this->mesh_size, this->mesh_size);
-    // //   glEnableVertexAttribArray(0);
-    // //   glBindBuffer(GL_ARRAY_BUFFER, this->quad_vertexbuffer);
-    // //   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
-    // //   glDrawArrays(GL_TRIANGLES, 0, 6);
-    // //   glDisableVertexAttribArray(0);
-    //     glBindVertexArray(GroundVertexArrayID);
-    //     this->textures.at(0)->bind(heightmap_shader->getUniform("Texture0"));
-    //     this->textures.at(1)->bind(heightmap_shader->getUniform("Texture1"));
-    //     this->textures.at(2)->bind(heightmap_shader->getUniform("Texture2"));
-
-    //     // center the ground plane
-    //     SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, heightmap_shader);
-
-    //     // pass camera position to shader
-    //     glm::vec3 offset = camera_pos;
-    //     offset.y = 0;
-    //     offset.x = (int)offset.x;
-    //     offset.z = (int)offset.z;
-    //     // for calculating vertices, decimal
-    //     glUniform3fv(heightmap_shader->getUniform("camoff"), 1, &offset[0]);
-    //     // for calculating color, float
-    //     glUniform3fv(heightmap_shader->getUniform("campos"), 1, &camera_pos[0]);
-    //     // pass mesh size to heightmap_shader
-    //     glUniform1i(heightmap_shader->getUniform("mesh_size"), this->mesh_size);
-    //     // pass tex zoom to heightmap_shader
-    //     glUniform1i(heightmap_shader->getUniform("tex_zoom"), this->tex_zoom);
-
-    //     glEnableVertexAttribArray(0);
-    //     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
-    //     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    //     glEnableVertexAttribArray(1);
-    //     glBindBuffer(GL_ARRAY_BUFFER, GrndTexBuffObj);
-    //     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-    //     // // draw!
-    //     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
-    //     glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
-
-    //     // // render to screen (framebuff = 0)
-    //     // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //     // // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //     // glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
-
-    //     // render to screem (framebuff = 0)
-
-    //     // glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuf);
-    //     // // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //     // glDrawElements(GL_TRIANGLES, g_GiboLen, GL_UNSIGNED_SHORT, 0);
-
-    //     /* code to write out the FBO (texture) just once  - this is for debugging*/
-    //     /* Note that texBuf[0] corresponds to frameBuf[0] */
-        static int firsttime = 1;
-        if (firsttime) {
-        assert(GLTextureWriter::WriteImage(this->texBuf,"Texture_output.png"));
-        firsttime = 0;
-        }
-
-    //     glDisableVertexAttribArray(0);
-    //     glDisableVertexAttribArray(1);
-    // heightmap_shader->unbind();
-
-
+    // clean up
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    // Reset viewport to window size
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 }
 
 // Draw a plane, for the waterline
-void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos) {
+void ProcTerrain::drawPlane(const shared_ptr<Program> plane_shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos) {
     // draw plane at y = 0, using same xy coords
-    shader->bind();
+    plane_shader->bind();
     glBindVertexArray(GroundVertexArrayID);
-    texture->bind(shader->getUniform("Texture0"));
+    texture->bind(plane_shader->getUniform("Texture0"));
 
     // center the ground plane
-    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, shader);
+    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, plane_shader);
 
     // pass camera position to shader
     glm::vec3 offset = camera_pos;
@@ -349,13 +293,13 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<T
     offset.x = (int)offset.x;
     offset.z = (int)offset.z;
     // for calculating vertices, decimal
-    glUniform3fv(shader->getUniform("camoff"), 1, &offset[0]);
+    glUniform3fv(plane_shader->getUniform("camoff"), 1, &offset[0]);
     // for calculating color, float
-    glUniform3fv(shader->getUniform("campos"), 1, &camera_pos[0]);
+    glUniform3fv(plane_shader->getUniform("campos"), 1, &camera_pos[0]);
     // pass mesh size to shader
-    glUniform1i(shader->getUniform("mesh_size"), this->mesh_size);
+    glUniform1i(plane_shader->getUniform("mesh_size"), this->mesh_size);
     // pass tex zoom to shader
-    glUniform1i(shader->getUniform("tex_zoom"), this->tex_zoom);
+    glUniform1i(plane_shader->getUniform("tex_zoom"), this->tex_zoom);
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, GrndBuffObj);
@@ -371,7 +315,7 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<T
 
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-    shader->unbind();
+    plane_shader->unbind();
 }
 
 /* get the height at an xy position */

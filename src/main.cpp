@@ -107,7 +107,7 @@ public:
 	WindowManager * windowManager = nullptr;
 
 	// Our shader program - use this one for Blinn-Phong
-	std::shared_ptr<Program> prog, texProg, heightShader, heightMapShader, skysphere_shader, water_shader;
+	std::shared_ptr<Program> prog, texProg, terrainShader, heightShader, heightMapShader, skysphere_shader, water_shader;
 
 	//our geometry
 	shared_ptr<MultiShape> tree1;
@@ -312,6 +312,37 @@ public:
 		heightShader->addUniform("tex_zoom");
 
 		// Initialize the GLSL program that we will use for texture mapping
+		terrainShader = make_shared<Program>();
+		terrainShader->setVerbose(true);
+		terrainShader->setShaderNames(resourceDirectory + "/terrain_vert.glsl", resourceDirectory + "/terrain_frag.glsl");
+		if(!terrainShader->init()) {
+			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+			exit(1);
+		}
+		terrainShader->addUniform("P");
+		terrainShader->addUniform("V");
+		terrainShader->addUniform("M");
+		// lighting
+		terrainShader->addUniform("lightColor");
+		terrainShader->addUniform("ambientIntensity");
+		terrainShader->addUniform("shineIntensity");
+		terrainShader->addUniform("flip");
+		terrainShader->addUniform("Texture0");
+		terrainShader->addUniform("Texture1");
+		terrainShader->addUniform("Texture2");
+		terrainShader->addUniform("lightPos");
+		terrainShader->addAttribute("vertPos");
+		terrainShader->addAttribute("vertNor");
+		terrainShader->addAttribute("vertTex");
+		// camera position and offset
+		terrainShader->addUniform("camoff");
+		terrainShader->addUniform("campos");
+		// mesh size
+		terrainShader->addUniform("mesh_size");
+		// texture zoom
+		terrainShader->addUniform("tex_zoom");
+
+		// Initialize the GLSL program that we will use for texture mapping
 		heightMapShader = make_shared<Program>();
 		heightMapShader->setVerbose(true);
 		heightMapShader->setShaderNames(resourceDirectory + "/heightmap_vertex.glsl", resourceDirectory + "/heightmap_frag.glsl");
@@ -464,7 +495,7 @@ public:
 			(resourceDirectory + "/grass.jpg").c_str(),
 			(resourceDirectory + "/stone.jpg").c_str()
 		};
-		ground.init(heightMapShader, tex_filenames);
+		ground.init(terrainShader, tex_filenames);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -783,6 +814,17 @@ public:
 		glUniform1f(heightShader->getUniform("ambientIntensity"), ambient_intensity);
 		glUniform1f(heightShader->getUniform("shineIntensity"), shine_intensity);
 		heightShader->unbind();
+
+		terrainShader->bind();
+		glUniformMatrix4fv(terrainShader->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(terrainShader->getUniform("V"), 1, GL_FALSE, value_ptr(View));
+		glUniformMatrix4fv(terrainShader->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+
+		glUniform3f(terrainShader->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
+		glUniform3f(terrainShader->getUniform("lightColor"), light_color.r, light_color.g, light_color.b);
+		glUniform1f(terrainShader->getUniform("ambientIntensity"), ambient_intensity);
+		glUniform1f(terrainShader->getUniform("shineIntensity"), shine_intensity);
+		terrainShader->unbind();
 
 		// Height Map Shader
 		heightMapShader->bind();

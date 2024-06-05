@@ -13,7 +13,7 @@
 
 #define DEFAULT_TEX_ZOOM (1)
 #define DEFAULT_MESH_SIZE (100)
-#define MESH_SIZE 100
+#define MESH_SIZE DEFAULT_MESH_SIZE
 
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
@@ -42,6 +42,7 @@ class ProcTerrain {
         GLuint frameBuf;
         GLuint texBuf;
         GLuint depthBuf;
+        std::shared_ptr<Texture> heightmap;
 
         //geometry for texture render
 	    GLuint quad_VertexArrayID;
