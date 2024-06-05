@@ -37,6 +37,7 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const vector<std::strin
         this->textures.back()->setUnit(i++);
         this->textures.back()->setWrapModes(GL_REPEAT, GL_REPEAT);
     }
+    this->textures.back()->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
     // // the dimensions of the grid (in points)
     // int points_w = 20;
@@ -113,7 +114,9 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const vector<std::strin
     // GLuint this->texBuf;
     glGenTextures(1, &(this->texBuf));
     glBindTexture(GL_TEXTURE_2D, this->texBuf);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, this->mesh_size, this->mesh_size, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, this->mesh_size, this->mesh_size, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -139,7 +142,7 @@ void ProcTerrain::init(const shared_ptr<Program> shader, const vector<std::strin
 
 // randomely generate terrain
 void ProcTerrain::draw(glm::vec3 camera_pos){
-    // // generate the heightmap
+        // // generate the heightmap
     // this->gen_heightmap(camera_pos, this->shader);
 
     this->shader->bind();
@@ -149,15 +152,15 @@ void ProcTerrain::draw(glm::vec3 camera_pos){
     this->textures.at(2)->bind(this->shader->getUniform("Texture2"));
 
     /* --- bind the heightmap texture --- */
-    int unit = 4;
+    int unit = this->textures.size();
     // set wrap modes
+    glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, this->texBuf);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    // bind
-	glActiveTexture(GL_TEXTURE0 + unit);
-	glBindTexture(GL_TEXTURE_2D, this->texBuf);
-	glUniform1i(3, unit);
+    // bind to heightmap texture
+    // glUniform1i(this->shader->getUniform("Texture0"), unit);
+    glUniform1i(this->shader->getUniform("heightmap"), unit);
+
+
 
     // center the ground plane
     SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, this->shader);
@@ -254,6 +257,14 @@ void ProcTerrain::gen_heightmap(glm::vec3 camera_pos, const shared_ptr<Program> 
 
     heightmap_shader->bind();
 
+    // pass camera position to shader
+    glm::vec3 offset = camera_pos;
+    offset.y = 0;
+    offset.x = (int)offset.x;
+    offset.z = (int)offset.z;
+    // for calculating vertices, decimal
+    glUniform3fv(heightmap_shader->getUniform("camoff"), 1, &offset[0]);
+
     // Render full-screen quad or plane
     glBindVertexArray(this->quad_VertexArrayID);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -285,7 +296,7 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> plane_shader, const shared
     texture->bind(plane_shader->getUniform("Texture0"));
 
     // center the ground plane
-    SetModel(glm::vec3(-this->mesh_size/2, 0, -this->mesh_size/2), 0, 0, 1, plane_shader);
+    SetModel(glm::vec3(-this->mesh_size/2, 0.5, -this->mesh_size/2), 0, 0, 1, plane_shader);
 
     // pass camera position to shader
     glm::vec3 offset = camera_pos;
@@ -319,11 +330,39 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> plane_shader, const shared
 }
 
 /* get the height at an xy position */
-float ProcTerrain::get_altitude(glm::vec3 pos, glm::vec3 camera_pos){
-    // get reletive position from camera
-    glm::vec3 rel_pos = pos - camera_pos;
+float ProcTerrain::get_altitude(glm::vec3* pos, glm::vec3 camera_pos){
+    // get the height of a specific pixel from this->texBuff
+    //Backup old openGL state.
+	GLint backupBoundTexture;
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &backupBoundTexture);
+	//Bind texture to buffer
+	glBindTexture(GL_TEXTURE_2D, this->texBuf);
+	//Retrieve width and height
+	int txWidth = this->mesh_size;
+	int txHeight = this->mesh_size;
+	//Allocate buffer
+	char * dataBuffer = new char[txWidth*txHeight*3];
+	//Get data from Opengl
+	getData(dataBuffer, GL_RGB, GL_UNSIGNED_BYTE);
+	// //Flip data for output
+	flip_buffer(dataBuffer,txWidth,txHeight);
+
     // get the height at the position
-    return get_height(rel_pos);
+    int x = (int)camera_pos.x;
+    int y = (int)camera_pos.z;
+    // get the height at the position
+    int idx = (y * txWidth + x) * 3;
+    float height = (float)dataBuffer[idx] / 255 * 10 + 1;
+
+    printf("height: %f\n", height);
+
+	//Cleanup
+	delete [] dataBuffer;
+	//Bind old texture
+	glBindTexture(GL_TEXTURE_2D,backupBoundTexture);
+
+    return height;
+
 }
 
 /* helper function to set model trasnforms */
@@ -358,3 +397,43 @@ void createFBO(GLuint& fb, GLuint& tex, int width, int height) {
       exit(0);
     }
   }
+
+//   /**
+//  * Retrieve data from a bound buffer
+//  */
+// void getData(void * dataBuffer, GLenum format, GLenum type)
+// {
+
+// 	glGetTexImage(GL_TEXTURE_2D,
+// 		0,
+// 		format,
+// 		type,
+// 		dataBuffer);
+// 	//Flip data buffer
+
+// }
+// /**
+//  * Main logic of this code taken from stb_image.h
+//  * @param imgData Image data to flip
+//  * @param width   width of the image
+//  * @param height  height of the image
+//  */
+// void flip_buffer(char * imgData, int width, int height )
+// {
+
+// 	int w =width, h = height;
+// 	int depth = 3;
+// 	int row,col,z;
+// 	char temp;
+
+
+// 	for (row = 0; row < (h>>1); row++) {
+// 		for (col = 0; col < w; col++) {
+// 			for (z = 0; z < depth; z++) {
+// 				temp = imgData[(row * w + col) * depth + z];
+// 				imgData[(row * w + col) * depth + z] = imgData[((h - row - 1) * w + col) * depth + z];
+// 				imgData[((h - row - 1) * w + col) * depth + z] = temp;
+// 			}
+// 		}
+// 	}
+// }

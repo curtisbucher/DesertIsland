@@ -17,8 +17,8 @@ uniform vec3 camoff;
 
 #define PARAM_BASE_HEIGHT_POW (5)
 
-#define PARAM_HEIGHT_SCALE (60)
-#define PARAM_HEIGHT_TRANS (-10)
+#define PARAM_HEIGHT_SCALE (10)
+#define PARAM_HEIGHT_TRANS (10)
 
 // Hash function to generate random numbers
 float hash(float n) {
@@ -74,9 +74,12 @@ float get_height(vec3 pos){
 
 void main() {
 	// calculate position
-	vec4 vp = vec4(vTexCoord.x, vTexCoord.y, 0, 1) * 100;
+    vec4 vp = vec4(vTexCoord.xy - camoff.xy, 0, 1) * 100;
+
+	// // calculate position
+	// vec4 vp = vec4(vTexCoord.x, vTexCoord.y, 0, 1) * 100;
 
 	// combine all components
 	float height = (get_height(vp.xzy));
-	color = vec4(vec3(height), 1.0);
+	color = vec4(height, 0, 0, 1.0);
 }

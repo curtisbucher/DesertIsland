@@ -341,6 +341,8 @@ public:
 		terrainShader->addUniform("mesh_size");
 		// texture zoom
 		terrainShader->addUniform("tex_zoom");
+		// heightmap
+		terrainShader->addUniform("heightmap");
 
 		// Initialize the GLSL program that we will use for texture mapping
 		heightMapShader = make_shared<Program>();
@@ -493,7 +495,8 @@ public:
 		std::vector<std::string> tex_filenames = {
 			(resourceDirectory + "/sand.jpg").c_str(),
 			(resourceDirectory + "/grass.jpg").c_str(),
-			(resourceDirectory + "/stone.jpg").c_str()
+			(resourceDirectory + "/stone.jpg").c_str(),
+			"Texture_output.png"
 		};
 		ground.init(terrainShader, tex_filenames);
 
@@ -879,7 +882,7 @@ public:
 		//draw the palm tree
 		tree1->reset_trans();
 		tree1->center_and_scale();
-		tree1->translate(vec3(0, ground.get_altitude(vec3(0,0,0), -mycam.pos), 0));
+		tree1->translate(vec3(0, 0, 0));
 		tree1->scale(vec3(2));
 		tree1->draw();
 
@@ -890,6 +893,7 @@ public:
 		ground.draw(-mycam.pos);
 		ground.drawPlane(water_shader, water_texture, -mycam.pos);
 
+		mycam.pos.y = ground.get_altitude(&mycam.pos, -mycam.pos);
 		//animation update example
 		sTheta = sin(glfwGetTime() * 1 / DAY_DURATION_S);
 		eTheta = std::max(0.0f, (float)sin(glfwGetTime()));

@@ -32,7 +32,7 @@ class ProcTerrain {
         void draw(glm::vec3 camera_pos);
         void drawPlane(const shared_ptr<Program> shader, const shared_ptr<Texture> texture, glm::vec3 camera_pos);
         /* get the height at an xy position */
-        float get_altitude(glm::vec3 pos, glm::vec3 camera_pos);
+        float get_altitude(glm::vec3* pos, glm::vec3 camera_pos);
         void gen_heightmap(glm::vec3 camera_pos, const shared_ptr<Program> heightmap_shader);
 
     private:

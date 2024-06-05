@@ -1,7 +1,7 @@
 #version 330 core
 
-#define TEX1_MIN_HEIGHT (2)
-#define TEX2_MIN_HEIGHT (7)
+#define TEX1_MIN_HEIGHT (3)
+#define TEX2_MIN_HEIGHT (6)
 
 // texture image
 uniform sampler2D Texture0;

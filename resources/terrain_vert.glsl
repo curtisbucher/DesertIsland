@@ -40,7 +40,8 @@ void main() {
     // texture position
     vec4 tpos = vp;
     tpos =  M * tpos;
-    tpos.y += texture(heightmap, vp.xz).r;
+    float height = texture(heightmap, tpos.xz / 100.0).r * 10;
+    tpos.y += height;
 
     // pass position to fragment shader
     EPos = tpos.xyz;
