@@ -101,7 +101,7 @@ public:
 	std::shared_ptr<Program> prog, texProg, heightShader, skysphere_shader, water_shader;
 
 	//our geometry
-	shared_ptr<MultiShape> tree1;
+	shared_ptr<MultiShape> tree1, campfire, rock;
 	shared_ptr<SkySphere> skysphere;
 	shared_ptr<Shape> mesh;
 
@@ -115,14 +115,13 @@ public:
 	GLuint GroundVertexArrayID;
 
 	//the image to use as a texture (ground)
-	shared_ptr<Texture> texture0, leaf_texture, water_texture, sand_texture, grass_texture, stone_texture, textureDaySky, textureNightSky;
-	shared_ptr<Texture> tree1_texture;
+	shared_ptr<Texture> texture0, water_texture, textureDaySky, textureNightSky;
 
 	//global data (larger program should be encapsulated)
 	vec3 gMin;
 	vec3 camera_trans=START_CAMERA_TRANS;
 	vec3 camera_rot=START_CAMERA_ROT;
-	vec3 light_trans=vec3(-2, 2, 2);
+	vec3 light_trans=vec3(0, 4.5, 0);
 	vec3 light_color=vec3(1, 1, 1);
 	int vec_toggle = 0;
 	float ambient_intensity = 0.6;
@@ -130,8 +129,6 @@ public:
 	//animation data
 	float gTrans = -3;
 	float sTheta = 0;
-	float eTheta = 0;
-	float hTheta = 0;
 
 	void scrollCallback(GLFWwindow * window, double in_deltaX, double in_deltaY){
 		// TODO: implement
@@ -245,8 +242,6 @@ public:
 		prog->addAttribute("vertPos");
 		prog->addAttribute("vertNor");
 		prog->addUniform("flip");
-		// to silence warning for drawing textured objects
-		prog->addAttribute("vertTex");
 
 		// Initialize the GLSL program that we will use for texture mapping
 		texProg = make_shared<Program>();
@@ -366,13 +361,6 @@ public:
   		water_texture->init();
   		water_texture->setUnit(0);
   		water_texture->setWrapModes(GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT);
-
-		// load in tree texture
-		tree1_texture = make_shared<Texture>();
-		tree1_texture->setFilename(resourceDirectory + "/objects/trees/_1_tree.jpg");
-		tree1_texture->init();
-		tree1_texture->setUnit(1);
-		tree1_texture->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 	}
 
 	void initGeom(const std::string& resourceDirectory)
@@ -385,6 +373,24 @@ public:
 		// trees
 		tree1 = make_shared<MultiShape>(false, texProg, (objectDir + "/trees/_1_tree.jpg").c_str());
 		bool rc = tree1->loadObjFromFile(errStr, (objectDir + "/trees/tree1.obj").c_str());
+		// error handling
+		if (!rc) {
+			cerr << errStr << endl;
+			exit(-1);
+		}
+
+		// // rocks
+		// rock = make_shared<MultiShape>(false, texProg, (objectDir + "/rocks/rock1.jpg").c_str());
+		// rc = rock->loadObjFromFile(errStr, (objectDir + "/rocks/rock1.obj").c_str());
+		// // error handling
+		// if (!rc) {
+		// 	cerr << errStr << endl;
+		// 	exit(-1);
+		// }
+
+		// campfire
+		campfire = make_shared<MultiShape>(false, texProg, (objectDir + "/campfire/campfire1.jpg").c_str());
+		rc = campfire->loadObjFromFile(errStr, (objectDir + "/campfire/campfire1.obj").c_str());
 		// error handling
 		if (!rc) {
 			cerr << errStr << endl;
@@ -482,49 +488,6 @@ public:
      	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, GIndxBuffObj);
       	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(idx), idx, GL_STATIC_DRAW);
       }
-
-     //helper function to pass material data to the GPU
-	void SetMaterial(shared_ptr<Program> curS, int i) {
-
-    	switch ((i + vec_toggle) % 6) {
-    		case 0: //shiny blue plastic
-    			glUniform3f(curS->getUniform("MatAmb"), 0.096, 0.046, 0.095);
-    			glUniform3f(curS->getUniform("MatDif"), 0.96, 0.46, 0.95);
-    			glUniform3f(curS->getUniform("MatSpec"), 0.45, 0.23, 0.45);
-    			glUniform1f(curS->getUniform("MatShine"), 120.0);
-    		break;
-    		case 1: // flat grey
-    			glUniform3f(curS->getUniform("MatAmb"), 0.063, 0.038, 0.1);
-    			glUniform3f(curS->getUniform("MatDif"), 0.63, 0.38, 1.0);
-    			glUniform3f(curS->getUniform("MatSpec"), 0.3, 0.2, 0.5);
-    			glUniform1f(curS->getUniform("MatShine"), 4.0);
-    		break;
-    		case 2: //brass
-    			glUniform3f(curS->getUniform("MatAmb"), 0.004, 0.05, 0.09);
-    			glUniform3f(curS->getUniform("MatDif"), 0.04, 0.5, 0.9);
-    			glUniform3f(curS->getUniform("MatSpec"), 0.02, 0.25, 0.45);
-    			glUniform1f(curS->getUniform("MatShine"), 27.9);
-    		break;
-			case 3: // shiny green
-				glUniform3f(curS->getUniform("MatAmb"), 0.0215, 0.1745, 0.0215);
-				glUniform3f(curS->getUniform("MatDif"), 0.07568, 0.61424, 0.07568);
-				glUniform3f(curS->getUniform("MatSpec"), 0.633, 0.727811, 0.633);
-				glUniform1f(curS->getUniform("MatShine"), 76.8);
-			break;
-			case 4: // skin
-				glUniform3f(curS->getUniform("MatAmb"), 0.329412, 0.223529, 0.027451);
-				glUniform3f(curS->getUniform("MatDif"), 0.780392, 0.568627, 0.113725);
-				glUniform3f(curS->getUniform("MatSpec"), 0.992157, 0.941176, 0.807843);
-				glUniform1f(curS->getUniform("MatShine"), 27.9);
-			break;
-			case 5: // black skin
-				glUniform3f(curS->getUniform("MatAmb"), 0.02, 0.02, 0.02);
-				glUniform3f(curS->getUniform("MatDif"), 0.01, 0.01, 0.01);
-				glUniform3f(curS->getUniform("MatSpec"), 0.4, 0.4, 0.4);
-				glUniform1f(curS->getUniform("MatShine"), 10.0);
-			break;
-  		}
-	}
 
 	void setModel(std::shared_ptr<Program> prog, std::shared_ptr<MatrixStack>M) {
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(M->topMatrix()));
@@ -709,56 +672,6 @@ public:
 		Projection->pushMatrix();
 		Projection->perspective(45.0f, aspect, 0.01f, 100.0f);
 
-		// View is global translation along negative z for now
-		/*
-		View->pushMatrix();
-			View->loadIdentity();
-			View->rotate(camera_rot.x, vec3(1,0,0));
-			View->rotate(camera_rot.y, vec3(0,1,0));
-			View->rotate(camera_rot.z, vec3(0,0,1));
-			View->translate(camera_trans);
-		*/
-		/*
-		// --- Draw Solid Colored Items ---
-		prog->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(View));
-
-		glUniform1i(prog->getUniform("flip"), 0);
-		glUniform3f(prog->getUniform("lightPos"), light_trans.x, light_trans.y, light_trans.z);
-
-		// draw the array of bunnies
-		float sp = 3.0;
-		float off = -3.5;
-		  for (int i =0; i < 3; i++) {
-		  	for (int j=0; j < 3; j++) {
-				theBunny->reset_trans();
-				theBunny->translate(vec3(off+sp*i, 0, off+sp*j));
-				theBunny->center_and_scale();
-				SetMaterial(prog, (i+j));
-				theBunny->draw(prog);
-			}
-		  }
-
-		//draw the dummy
-		dummy->reset_trans();
-		dummy->center_and_scale();
-		// rotate by pi/2 rad
-		dummy->rotate(-3.14159/2, vec3(1, 0, 0));
-		dummy->translate(vec3(-100, -200, 5));
-		SetMaterial(prog, 4);
-		dummy->draw(prog);
-
-		dummy->reset_trans();
-		dummy->center_and_scale();
-		// rotate by pi/2 rad
-		dummy->rotate(-3.14159/2, vec3(1, 0, 0));
-		dummy->translate(vec3(-200, -100, 5));
-		SetMaterial(prog, 5);
-		dummy->draw(prog);
-
-		prog->unbind();
-		*/
 
 		// --- Initialize Textures ---
 		// Initialize Prog
@@ -830,11 +743,19 @@ public:
 		/* --- */
 
 		// --- Draw Scene ---
+		// draw hierarchical model
 		draw_HM(Model, texProg, texture0);
 
-		//draw the palm tree
+		// draw the campfire
+		campfire->reset_trans();
+		campfire->center_and_scale();
+		campfire->scale(vec3(1));
+		campfire->translate(this->light_trans);
+		campfire->draw();
+
+		//draw the palm trees
 		std::vector<glm::vec3> tree_vectors = {
-			vec3(0,2.5,0),
+			vec3(5,2.5,0),
 			vec3(10,1.5,5),
 			vec3(0,2,5),
 			vec3(-10,1.5,5),
@@ -844,6 +765,10 @@ public:
 		};
 
 		for(auto v : tree_vectors) {
+			// if distance from camera is greater than 50, dont draw
+			if(glm::distance(v, mycam.pos) > 30) {
+				continue;
+			}
 			tree1->reset_trans();
 			tree1->center_and_scale();
 			tree1->translate(v);
@@ -851,19 +776,18 @@ public:
 			tree1->draw();
 		}
 
+
 		// draw the ground
 		ground.draw(-mycam.pos);
 		ground.drawPlane(water_shader, water_texture, -mycam.pos);
 
 		//animation update example
-		sTheta = sin(glfwGetTime() * 1 / DAY_DURATION_S);
-		eTheta = std::max(0.0f, (float)sin(glfwGetTime()));
-		hTheta = std::max(0.0f, (float)cos(glfwGetTime()));
+		sTheta = sin(glfwGetTime() * 1 / 10);
+		ambient_intensity = max((-0.5 * sTheta + 0.5), 0.8);
+		shine_intensity = max((0.5 * sTheta + 0.5), 0.6);
 
 		// Pop matrix stacks.
 		Projection->popMatrix();
-
-		printf("%f %f\n", mycam.pos.x, mycam.pos.z);
 	}
 };
 

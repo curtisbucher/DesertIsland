@@ -22,7 +22,6 @@ uniform vec3 camoff;
 uniform vec3 campos;
 
 uniform int tex_zoom;
-uniform int mesh_size;
 
 void main() {
 
