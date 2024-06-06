@@ -25,7 +25,7 @@
 using namespace std;
 using namespace glm;
 
-#define START_CAMERA_TRANS vec3(-1.8,-0.8, -4.2)
+#define START_CAMERA_TRANS vec3(0,0,0)
 #define START_CAMERA_ROT vec3(0.2, -0.8, 0)
 #define CAMERA_SPEED 0.5
 #define CAMERA_ROT_SPEED 0.3
@@ -73,15 +73,6 @@ public:
 		else if(d==1)
 			r_speed = 3*ftime;
 
-		// rotAngle += yangle;s
-		/*glm::mat4 R1 = glm::rotate(glm::mat4(1), pitch, glm::vec3(1, 0, 0));
-		glm::mat4 R2 = glm::rotate(glm::mat4(1), rotAngle, glm::vec3(0, 1, 0));
-		glm::vec4 dir = glm::vec4(0, 0, speed,1);
-		dir = dir*R2*R1;
-		pos += glm::vec3(dir.x, dir.y, dir.z);
-		glm::mat4 T = glm::translate(glm::mat4(1), pos);
-		return R1*R2*T;*/
-		//REPLACED BY FOLLOWING CODE ... V
 		vec3 front;
 		front.x = cos(glm::radians(theta)) * cos(glm::radians(phi));
 		front.y = -1 * sin(glm::radians(phi));
@@ -541,17 +532,17 @@ public:
 
 	void draw_HM(std::shared_ptr<MatrixStack> Model, shared_ptr<Program> prog, shared_ptr<Texture> texture) {
 		#define TORSO_SIZE	vec3(1.25, 1.35, 1.25)
-		#define TORSO_POS 	vec3(0, 0, 0)
+		#define TORSO_POS 	vec3(0, 1, 0)
 
 		#define HEAD_SIZE 	vec3(0.5, 0.5, 0.5)
-		#define HEAD_POS 	vec3(0, 1.4, 0)
+		#define HEAD_POS 	vec3(0, 2.4, 0)
 
 		#define BICEP_SIZE 	vec3(0.4, 0.25, 0.25)
 		#define FORARM_SIZE vec3(0.6, 0.25, 0.25)
 		#define HAND_SIZE 	vec3(0.3, 0.25, 0.25)
 
-		#define RIGHT_SHOULDER_POS vec3(0.8, 0.8, 0)
-		#define LEFT_SHOULDER_POS vec3(-0.8, 0.8, 0)
+		#define RIGHT_SHOULDER_POS vec3(0.8, 1.8, 0)
+		#define LEFT_SHOULDER_POS vec3(-0.8, 1.8, 0)
 
 		// Draw a heirarchical model
 		//animation update example
@@ -839,15 +830,26 @@ public:
 		/* --- */
 
 		// --- Draw Scene ---
-
 		draw_HM(Model, texProg, texture0);
 
 		//draw the palm tree
-		tree1->reset_trans();
-		tree1->center_and_scale();
-		tree1->translate(vec3(0, ground.get_altitude(vec3(0,0,0), -mycam.pos), 0));
-		tree1->scale(vec3(2));
-		tree1->draw();
+		std::vector<glm::vec3> tree_vectors = {
+			vec3(0,2.5,0),
+			vec3(10,1.5,5),
+			vec3(0,2,5),
+			vec3(-10,1.5,5),
+			vec3(0,1.5,-10),
+			vec3(20, 2.3, 25),
+			vec3(30, 3.5, 30)
+		};
+
+		for(auto v : tree_vectors) {
+			tree1->reset_trans();
+			tree1->center_and_scale();
+			tree1->translate(v);
+			tree1->scale(vec3(2));
+			tree1->draw();
+		}
 
 		// draw the ground
 		ground.draw(-mycam.pos);
@@ -861,6 +863,7 @@ public:
 		// Pop matrix stacks.
 		Projection->popMatrix();
 
+		printf("%f %f\n", mycam.pos.x, mycam.pos.z);
 	}
 };
 
@@ -881,7 +884,7 @@ int main(int argc, char *argv[])
 	// and GL context, etc.
 
 	WindowManager *windowManager = new WindowManager();
-	windowManager->init(640, 480);
+	windowManager->init(1280, 960);
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 

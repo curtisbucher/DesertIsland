@@ -191,7 +191,9 @@ void ProcTerrain::drawPlane(const shared_ptr<Program> shader, const shared_ptr<T
 /* get the height at an xy position */
 float ProcTerrain::get_altitude(glm::vec3 pos, glm::vec3 camera_pos){
     // get reletive position from camera
-    glm::vec3 rel_pos = pos - camera_pos;
+    // glm::vec3 rel_pos = vec3((int)camera_pos.x, (int)camera_pos.y, (int)camera_pos.z) * M;
+    // get the height at the position
+    glm::vec3 rel_pos = vec3(this->mesh_size/2, 0, this->mesh_size/2) + pos * 1.33f;
     // get the height at the position
     return get_height(rel_pos);
 }
