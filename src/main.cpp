@@ -33,6 +33,8 @@ using namespace glm;
 // the duration of a day in seconds
 #define DAY_DURATION_S (1 * 60)
 
+#define MAX_PHI (80.0)
+
 double get_last_elapsed_time()
 {
 	static double lasttime = glfwGetTime();
@@ -42,7 +44,6 @@ double get_last_elapsed_time()
 	return difference;
 }
 
-#define MAX_PHI (80.0)
 class camera
 {
 public:
@@ -363,14 +364,14 @@ public:
 			exit(-1);
 		}
 
-		// // rocks
-		// rock = make_shared<MultiShape>(false, texProg, (objectDir + "/rocks/rock1.jpg").c_str());
-		// rc = rock->loadObjFromFile(errStr, (objectDir + "/rocks/rock1.obj").c_str());
-		// // error handling
-		// if (!rc) {
-		// 	cerr << errStr << endl;
-		// 	exit(-1);
-		// }
+		// rocks
+		rock = make_shared<MultiShape>(false, texProg, (objectDir + "/rocks/rock1.jpeg").c_str());
+		rc = rock->loadObjFromFile(errStr, (objectDir + "/rocks/rock1.obj").c_str());
+		// error handling
+		if (!rc) {
+			cerr << errStr << endl;
+			exit(-1);
+		}
 
 		// campfire
 		campfire = make_shared<MultiShape>(false, texProg, (objectDir + "/campfire/campfire1.jpg").c_str());
@@ -497,7 +498,6 @@ public:
 		// Draw a heirarchical model
 		//animation update example
 		float sTheta = sin(glfwGetTime());
-		float sTheta_2 = sin(glfwGetTime() * 2);
 
 		float left_bicep_angle, left_forearm_angle, left_hand_angle;
 		left_bicep_angle = 0.5 + (sTheta * 0.1);
@@ -660,7 +660,6 @@ public:
 		Projection->pushMatrix();
 		Projection->perspective(45.0f, aspect, 0.01f, 100.0f);
 
-
 		// --- Initialize Textures ---
 		// Initialize Prog
 		prog->bind();
@@ -741,13 +740,34 @@ public:
 		campfire->translate(this->light_trans);
 		campfire->draw();
 
-		//draw the palm trees
+		// draw the rocks
+		std::vector<glm::vec3> rock_vectors = {
+			vec3(	0,		1.65, 	5),
+			vec3(	-2.5,	1.5, 	-5),
+			vec3(	10,		1.25, 	5),
+			vec3(	-10,	1.5, 	-5),
+			vec3(	0,		1, 		-10),
+		};
+
+		for(auto v : rock_vectors) {
+			// if distance from camera is greater than 50, dont draw
+			if(glm::distance(v, mycam.pos) > 50) {
+				continue;
+			}
+			rock->reset_trans();
+			rock->center_and_scale();
+			rock->translate(v);
+			rock->scale(vec3(0.5));
+			rock->draw();
+		}
+
+		//draw the trees
 		std::vector<glm::vec3> tree_vectors = {
-			vec3(5,2.5,0),
+			vec3(5,2,0),
 			vec3(10,1.5,5),
 			vec3(0,2,5),
 			vec3(-10,1.5,5),
-			vec3(0,1.5,-10),
+			vec3(0,1.5,-8),
 			vec3(20, 2.3, 25),
 			vec3(30, 3.5, 30)
 		};
@@ -763,7 +783,6 @@ public:
 			tree1->scale(vec3(2));
 			tree1->draw();
 		}
-
 
 		// draw the ground
 		ground.draw(-mycam.pos);
