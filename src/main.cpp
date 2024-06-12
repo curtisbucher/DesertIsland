@@ -25,8 +25,8 @@
 using namespace std;
 using namespace glm;
 
-#define START_CAMERA_TRANS vec3(0,0,0)
-#define START_CAMERA_ROT vec3(0.2, -0.8, 0)
+#define START_CAMERA_TRANS vec3(3,3,3)
+#define START_CAMERA_ROT vec3(10, 10, 10)
 #define CAMERA_SPEED 0.5
 #define CAMERA_ROT_SPEED 0.3
 
@@ -54,10 +54,10 @@ public:
 	camera()
 	{
 		w = a = s = d = 0;
-		rotAngle = 0.0;
-		phi = 0.0;
-		theta = 0.0;
-		pos = glm::vec3(0, 0, 0);
+		rotAngle = START_CAMERA_ROT.x;//0.0;
+		phi = START_CAMERA_ROT.y;
+		theta = START_CAMERA_ROT.z;
+		pos = START_CAMERA_TRANS;//glm::vec3(0, 0, 0);
 	}
 	glm::mat4 process(double ftime)
 	{
@@ -119,8 +119,6 @@ public:
 
 	//global data (larger program should be encapsulated)
 	vec3 gMin;
-	vec3 camera_trans=START_CAMERA_TRANS;
-	vec3 camera_rot=START_CAMERA_ROT;
 	vec3 light_trans=vec3(0, 4.5, 0);
 	vec3 light_color=vec3(1, 1, 1);
 	int vec_toggle = 0;
@@ -340,20 +338,6 @@ public:
 		// texture zoom
 		water_shader->addUniform("tex_zoom");
 
-		// -- TEXTURES ---
-		// TODO, make ground texture subclass of texture
-		textureDaySky = make_shared<Texture>();
-  		textureDaySky->setFilename(resourceDirectory + "/skysphere/sphere-day.jpg");
-  		textureDaySky->init();
-  		textureDaySky->setUnit(2);
-  		textureDaySky->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-
-		textureNightSky = make_shared<Texture>();
-  		textureNightSky->setFilename(resourceDirectory + "/skysphere/sphere-night.jpeg");
-  		textureNightSky->init();
-  		textureNightSky->setUnit(3);
-  		textureNightSky->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-
 		/* --- Terrain Textures --- */
 		//read in a load the texture
 		water_texture = make_shared<Texture>();
@@ -398,7 +382,7 @@ public:
 		}
 
 		// skysphere
-		skysphere = make_shared<SkySphere>(skysphere_shader, (resourceDirectory + "/skysphere/sphere-night.jpeg").c_str(), (resourceDirectory + "/skysphere/sphere-day.jpg").c_str());
+		skysphere = make_shared<SkySphere>(skysphere_shader, (resourceDirectory + "/skysphere/sphere-day.jpg").c_str(), (resourceDirectory + "/skysphere/sphere-night.jpeg").c_str());
 		rc = skysphere->loadObjFromFile(errStr, (resourceDirectory + "/skysphere/sphereWTex.obj").c_str());
 		// error handling
 		if (!rc) {
@@ -494,6 +478,9 @@ public:
    	}
 
 	void draw_HM(std::shared_ptr<MatrixStack> Model, shared_ptr<Program> prog, shared_ptr<Texture> texture) {
+		#define HM_ROT_ANGLE	7.80
+		#define HM_ROT_VECTOR	vec3(0,1,0)
+
 		#define TORSO_SIZE	vec3(1.25, 1.35, 1.25)
 		#define TORSO_POS 	vec3(0, 1, 0)
 
@@ -511,16 +498,16 @@ public:
 		//animation update example
 		float sTheta = sin(glfwGetTime());
 		float sTheta_2 = sin(glfwGetTime() * 2);
-		float right_bicep_angle, right_forearm_angle, right_hand_angle;
-
-		right_bicep_angle = sTheta *0.25;
-		right_forearm_angle = sTheta_2 * 0.5 + (1.5 - right_bicep_angle);
-		right_hand_angle = (sTheta_2 * 0.5) + (0.5 * -right_forearm_angle + 1);//(sTheta_2 * 0.5) + right_forearm_angle;
 
 		float left_bicep_angle, left_forearm_angle, left_hand_angle;
-		left_bicep_angle = 0.5 + (sTheta * 0.05);
-		left_forearm_angle = 1 + (sTheta * 0.05);
-		left_hand_angle = 0 + (sTheta * 0.05);
+		left_bicep_angle = 0.5 + (sTheta * 0.1);
+		left_forearm_angle = 1 + (sTheta * 0.1);
+		left_hand_angle = 0 + (sTheta * 0.1);
+
+		float right_bicep_angle, right_forearm_angle, right_hand_angle;
+		right_bicep_angle = -left_bicep_angle;
+		right_forearm_angle = -left_forearm_angle;
+		right_hand_angle = -left_hand_angle;
 
 		prog->bind();
 
@@ -548,10 +535,11 @@ public:
 
 			// LEFT ARM - BICEP
 			Model->pushMatrix();
+				Model->rotate(HM_ROT_ANGLE, HM_ROT_VECTOR);
 				//place at shoulder
 				Model->translate(LEFT_SHOULDER_POS);
 				//rotate shoulder joint
-				Model->rotate(left_bicep_angle, vec3(0, 0, 1));
+				Model->rotate(left_bicep_angle, vec3(0, 1, 0));
 				//move to shoulder joint
 				Model->translate(vec3(-BICEP_SIZE.x, 0, 0));
 
@@ -560,7 +548,7 @@ public:
 					// place at elbow
 					Model->translate(vec3(-BICEP_SIZE.x, 0, 0));
 					// rotate elbow joint
-					Model->rotate(left_forearm_angle, vec3(0, 0, 1));
+					Model->rotate(left_forearm_angle, vec3(0, 1, 1));
 					// move to elbow - releative to rotation
 					Model->translate(vec3(-FORARM_SIZE.x, 0, 0));
 
@@ -597,10 +585,11 @@ public:
 
 			// RIGHT ARM - BICEP
 			Model->pushMatrix();
+				Model->rotate(HM_ROT_ANGLE, HM_ROT_VECTOR);
 				//place at shoulder
 				Model->translate(RIGHT_SHOULDER_POS);
 				//rotate shoulder joint
-				Model->rotate(right_bicep_angle, vec3(0, 0, 1));
+				Model->rotate(right_bicep_angle, vec3(0, 1, 0));
 				//move to shoulder joint
 				Model->translate(vec3(BICEP_SIZE.x, 0, 0));
 
@@ -609,7 +598,7 @@ public:
 					// place at elbow
 					Model->translate(vec3(BICEP_SIZE.x, 0, 0));
 					// rotate elbow joint
-					Model->rotate(right_forearm_angle, vec3(0, 0, 1));
+					Model->rotate(right_forearm_angle, vec3(0, 1, 1));
 					// move to elbow - releative to rotation
 					Model->translate(vec3(FORARM_SIZE.x, 0, 0));
 
@@ -642,7 +631,6 @@ public:
 			setModel(prog, Model);
 			mesh->draw(prog);
 			// mesh->draw();
-			Model->popMatrix();
 		Model->popMatrix();
 
 		prog->unbind();
@@ -737,7 +725,7 @@ public:
 		skysphere->center_and_scale();
 		skysphere->translate(vec3(0, 0, 0));
 		skysphere->scale(vec3(1));
-		skysphere->draw(0.5 * sTheta + 0.5);
+		skysphere->draw(sTheta);
 		// reendable the z buffer test for drawing the rest of the scene
 		glEnable(GL_DEPTH_TEST);
 		/* --- */
@@ -782,9 +770,10 @@ public:
 		ground.drawPlane(water_shader, water_texture, -mycam.pos);
 
 		//animation update example
-		sTheta = sin(glfwGetTime() * 1 / 10);
-		ambient_intensity = max((-0.5 * sTheta + 0.5), 0.8);
-		shine_intensity = max((0.5 * sTheta + 0.5), 0.6);
+		sTheta = (0.5f * sin(glfwGetTime() * 1 / 5)) + 0.5f;
+		ambient_intensity = std::min(std::max(sTheta, 0.3f), 0.6f);
+		shine_intensity = std::min(std::max(sTheta, 0.3f), 0.6f);
+		light_color = vec3(1, 1, 1) * std::min(std::max(sTheta, 0.3f), 0.6f);
 
 		// Pop matrix stacks.
 		Projection->popMatrix();
