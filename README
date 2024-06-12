@@ -1,8 +1,13 @@
 Name: Curtis Bucher
-Summary:
-    Island Scene, with sand textured island, and water textured ground, with multicolored bunnies and people, and a palm tree.
-    Change camera angles with w,a,s,d , change position with up, down, left, right, and change lighting positions with q,e.
 
-    Mesh colors are toggled beteen the solid colored objects with 'm'.
+How To Compile:
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+    $ ./DesertIsland
 
-    Demonstration of handling a mesh with no normals included in default execution, the mesh with no normals is given from the professor from bunnyNoNorm.obj, located in the scene in a grid on the island.
+How to Use:
+    - scroll mouse to change camera direction
+    - wasd to move
+    - qe to change campfire position (point lighting)
